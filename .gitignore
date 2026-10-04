@@ -1,0 +1,14 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+backups/
+storage/*
+!storage/.gitkeep
+# Real customer exports must never be committed.
+*.pdf
+*.dump
+*.enc
+.DS_Store

@@ -1,0 +1,25 @@
+# SITE_ADDRESS examples (set in .env):
+#   :80                  plain HTTP on the LAN (default for first boot; NOT for production use)
+#   billing.example.com  public domain -> automatic Let's Encrypt HTTPS
+#   https://192.168.1.50 LAN-only HTTPS -> also set CADDY_TLS="tls internal"
+{$SITE_ADDRESS::80} {
+	{$CADDY_TLS:}
+
+	encode gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		-Server
+	}
+
+	@api path /api/* /health /ready
+	handle @api {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		respond "ISP Billing API is running. The web interface arrives in a later phase." 200
+	}
+}
