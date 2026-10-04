@@ -1,4 +1,5 @@
 import os
+import tempfile
 import uuid
 from pathlib import Path
 
@@ -9,6 +10,7 @@ os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://postgres@localhost:5
 os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-production-0123456789abcdef")
 os.environ.setdefault("FIELD_ENCRYPTION_KEYS", Fernet.generate_key().decode())
 os.environ.setdefault("LOCKOUT_MINUTES", "15")
+os.environ.setdefault("STORAGE_DIR", tempfile.mkdtemp(prefix="isp-test-storage-"))
 
 import pytest  # noqa: E402
 from alembic import command  # noqa: E402

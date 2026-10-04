@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api import admin, auth, billing, collectors, customers, masters
+from app.api import admin, auth, billing, collectors, customers, imports, masters
 from app.core.config import get_settings
 from app.core.db import get_db
 from app.services.billing import BillingError
@@ -18,7 +18,7 @@ app = FastAPI(
 )
 
 API = "/api/v1"
-for module in (auth, admin, masters, collectors, customers, billing):
+for module in (auth, admin, masters, collectors, customers, billing, imports):
     app.include_router(module.router, prefix=API)
 
 

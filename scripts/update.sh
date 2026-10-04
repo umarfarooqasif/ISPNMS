@@ -20,6 +20,9 @@ fi
 echo "[update] safety backup before changing anything"
 "$ROOT/scripts/backup.sh"
 
+mkdir -p storage
+chown 10001:10001 storage 2>/dev/null || true   # uploads are written by the API container (uid 10001)
+
 echo "[update] building and restarting (migrations run automatically)"
 dc build
 dc up -d

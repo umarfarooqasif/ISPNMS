@@ -35,6 +35,9 @@ PERMISSIONS: dict[str, str] = {
     "receipt.print": "Print/reprint receipts",
     "collection.view_own": "View own collection history",
     "collector.manage": "Manage collectors and their assignments",
+    "import.upload": "Upload source-system exports (Wasooli PDF) and view import results",
+    "import.review": "Review import rows and record decisions",
+    "import.commit": "Commit an import into customers and connections",
 }
 
 _ALL = list(PERMISSIONS)

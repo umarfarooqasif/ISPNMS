@@ -3,9 +3,11 @@
 Self-hosted billing and collection platform for an ISP, running alongside the existing
 MikroTik and Zalpro systems (which it does **not** replace).
 
-**Current status: Phase 1 complete (database + backend foundation).** The PDF importer, collector
-app, thermal printing and web dashboard are later phases. See [`docs/phase1.md`](docs/phase1.md) for exactly
-what exists and [`docs/architecture.md`](docs/architecture.md) for the overall design.
+**Current status: Phase 2 complete (database + backend + Wasooli PDF importer).** Billing runs, the collector
+app, thermal printing and the web dashboard are later phases. See [`docs/phase1.md`](docs/phase1.md) and
+[`docs/phase2.md`](docs/phase2.md) for exactly what exists and [`docs/architecture.md`](docs/architecture.md) for the overall design.
+
+Load your customers: `cp Wasooli.pdf storage/ && docker compose exec api python -m app.import_cli /data/storage/Wasooli.pdf --commit` (preview first without `--commit`).
 
 ## Install on a fresh Ubuntu/Debian VM
 

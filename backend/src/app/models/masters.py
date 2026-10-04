@@ -194,6 +194,8 @@ class Connection(Base, TimestampMixin):
     package_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("packages.id"))
     connection_type: Mapped[str] = mapped_column(String(16), nullable=False)
     install_date: Mapped[date | None] = mapped_column(Date)
+    # Wasooli "Recharge Date", kept as exported (meaning unconfirmed: last recharge or next due).
+    source_recharge_date: Mapped[date | None] = mapped_column(Date)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="ACTIVE", index=True)
     monthly_price_override: Mapped[Decimal | None] = mapped_column(Money)
     billing_day: Mapped[int | None] = mapped_column(SmallInteger)

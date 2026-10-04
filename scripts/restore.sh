@@ -80,6 +80,7 @@ if [ -d storage ] && [ -n "$(ls -A storage 2>/dev/null | grep -v '^.gitkeep$' ||
 fi
 mkdir -p storage
 tar -xzf "$TMP/storage.tgz" -C storage
+chown -R 10001:10001 storage 2>/dev/null || true   # the API container runs as uid 10001
 
 echo "[restore] starting services"
 dc up -d

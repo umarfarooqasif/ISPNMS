@@ -80,6 +80,8 @@ fi
 
 mkdir -p storage backups
 chmod 700 backups
+# The API container runs as uid 10001 and must be able to write uploaded files here.
+chown 10001:10001 storage
 
 # --- start the stack ------------------------------------------------------------------------
 say "Building and starting the stack (first build takes a few minutes)"

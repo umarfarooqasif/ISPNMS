@@ -262,6 +262,7 @@ class ConnectionOut(ORM):
     package_id: uuid.UUID | None
     connection_type: str
     install_date: date | None
+    source_recharge_date: date | None = None
     status: str
     monthly_price_override: Decimal | None
     billing_day: int | None
