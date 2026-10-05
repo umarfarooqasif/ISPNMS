@@ -45,3 +45,14 @@ IMPORT_SESSION_STATUSES = (
 )
 IMPORT_ROW_STATUSES = ("NEW", "DUPLICATE", "UPDATED", "ERROR", "REVIEW", "IMPORTED", "SKIPPED")
 IMPORT_DECISIONS = ("IMPORT", "SKIP", "UPDATE_EXISTING", "CREATE_SEPARATE", "MANUAL_EDIT")
+
+BILLING_RUN_KINDS = ("MONTHLY", "LATE_FEES")
+BILLING_RUN_ITEM_OUTCOMES = (
+    "INVOICED",        # a cycle was billed
+    "FREE_SKIPPED",    # FREE/TRIAL connection: cycle rolled forward, nothing charged
+    "ZERO_PRICE",      # ACTIVE connection with no price: NOT rolled forward, needs attention
+    "CYCLES_SKIPPED",  # missed cycles deliberately skipped (skip_remaining); never silent
+    "NO_DUE_DATE",     # ACTIVE connection without a next due date: needs attention
+    "LATE_FEE",        # a late fee was charged
+    "ERROR",           # this customer failed; everything else in the run still went through
+)

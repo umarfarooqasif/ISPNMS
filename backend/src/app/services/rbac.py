@@ -31,6 +31,9 @@ PERMISSIONS: dict[str, str] = {
     "payment.void": "Void payments/receipts",
     "billing.adjust": "Post billing adjustments",
     "billing.refund": "Issue refunds",
+    "billing.run": "Preview and run monthly billing and late fees",
+    "billing.opening_balance": "Load opening balances carried over from the old system",
+    "connection.status": "Suspend, disconnect or reactivate connections (can charge a reconnection fee)",
     "receipt.view": "View receipts",
     "receipt.print": "Print/reprint receipts",
     "collection.view_own": "View own collection history",
@@ -60,7 +63,8 @@ ROLES: dict[str, tuple[str, list[str]]] = {
         [
             "area.view", "package.view", "customer.view", "connection.view", "invoice.view",
             "invoice.create", "payment.view", "payment.create", "payment.void", "billing.adjust",
-            "billing.refund", "receipt.view", "receipt.print", "audit.view",
+            "billing.refund", "billing.run", "billing.opening_balance", "receipt.view",
+            "receipt.print", "audit.view",
         ],
     ),
     "collector": (
@@ -86,8 +90,10 @@ ROLES: dict[str, tuple[str, list[str]]] = {
 def seed_rbac(db: Session) -> None:
     """Idempotent. Adds missing permissions/roles/grants; never removes grants an admin changed."""
     perms = {p.code: p for p in db.scalars(select(Permission))}
+    new_codes: set[str] = set()
     for code, desc in PERMISSIONS.items():
         if code not in perms:
+            new_codes.add(code)
             perms[code] = Permission(code=code, description=desc)
             db.add(perms[code])
     db.flush()
@@ -103,7 +109,9 @@ def seed_rbac(db: Session) -> None:
         else:
             have = {p.code for p in role.permissions}
             for p in granted:
-                if p not in have and code == "super_admin":
+                # super_admin always has everything. Other roles only receive a permission by
+                # default when it is brand new, so grants an admin removed are never put back.
+                if p not in have and (code == "super_admin" or p in new_codes):
                     role.permissions.append(perms[p])
     db.flush()
 

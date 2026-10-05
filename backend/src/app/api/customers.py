@@ -159,10 +159,13 @@ def create_connection(customer_id: uuid.UUID, body: ConnectionCreate, request: R
 
     # Imported/disconnected statuses are stored as given; nothing defaults a connection to ACTIVE
     # except an explicit omission by a human creating a new service.
+    values = body.model_dump(exclude={"service_lines", "external_refs"})
+    if values.get("next_due_date") and values.get("billing_day") is None:
+        values["billing_day"] = values["next_due_date"].day  # keeps month-end customers on their day
     conn = Connection(
         customer_id=customer.id,
         connection_code=next_code(db, "connection_code_seq", "CN"),
-        **body.model_dump(exclude={"service_lines", "external_refs"}),
+        **values,
     )
     conn.service_lines = [ConnectionServiceLine(**sl.model_dump()) for sl in body.service_lines]
     conn.external_refs = [ExternalRef(**r.model_dump()) for r in body.external_refs]
@@ -209,6 +212,8 @@ def update_connection(connection_id: uuid.UUID, body: ConnectionUpdate, request:
     conn = _load_connection(db, user, connection_id)
     fields = body.model_dump(exclude_unset=True)
     _check_package(db, fields.get("package_id"))
+    if fields.get("next_due_date") and "billing_day" not in fields:
+        fields["billing_day"] = fields["next_due_date"].day
     before = {k: getattr(conn, k) for k in fields}
     for k, v in fields.items():
         setattr(conn, k, v)

@@ -194,8 +194,11 @@ class Connection(Base, TimestampMixin):
     package_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("packages.id"))
     connection_type: Mapped[str] = mapped_column(String(16), nullable=False)
     install_date: Mapped[date | None] = mapped_column(Date)
-    # Wasooli "Recharge Date", kept as exported (meaning unconfirmed: last recharge or next due).
+    # Wasooli "Recharge Date", kept exactly as exported. It is the NEXT DUE DATE (confirmed).
     source_recharge_date: Mapped[date | None] = mapped_column(Date)
+    # The billing cycle driver: the due date of the next cycle to invoice. Starts as the imported
+    # recharge date and moves forward one month every time a cycle is invoiced.
+    next_due_date: Mapped[date | None] = mapped_column(Date, index=True)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="ACTIVE", index=True)
     monthly_price_override: Mapped[Decimal | None] = mapped_column(Money)
     billing_day: Mapped[int | None] = mapped_column(SmallInteger)
@@ -214,7 +217,7 @@ class Connection(Base, TimestampMixin):
     __table_args__ = (
         CheckConstraint(_in("connection_type", C.CONNECTION_TYPES), name="connection_type"),
         CheckConstraint(_in("status", C.CONNECTION_STATUSES), name="status"),
-        CheckConstraint("billing_day IS NULL OR billing_day BETWEEN 1 AND 28", name="billing_day"),
+        CheckConstraint("billing_day IS NULL OR billing_day BETWEEN 1 AND 31", name="billing_day"),
         CheckConstraint(
             "monthly_price_override IS NULL OR monthly_price_override >= 0",
             name="override_non_negative",

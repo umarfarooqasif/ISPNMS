@@ -14,6 +14,7 @@ from app.core.db import get_db
 from app.models import BillingAccount, Invoice, Payment, Receipt, User
 from app.services import audit
 from app.services import billing as svc
+from app.services.billing_run import customer_billing_status
 
 router = APIRouter(tags=["billing"])
 
@@ -95,7 +96,10 @@ def customer_statement(customer_id: uuid.UUID, db: Session = Depends(get_db),
     s = svc.statement(db, customer_id)
     db.commit()  # the statement may have created the (empty) billing account
     return StatementOut(
-        customer_id=customer_id, balance=s["balance"], amount_due=s["amount_due"],
+        customer_id=customer_id,
+        billing_status=customer_billing_status(db, customer_id,
+                                               [r["status"] for r in s["open_invoices"]]),
+        balance=s["balance"], amount_due=s["amount_due"],
         credit=s["credit"],
         open_invoices=[
             _invoice_out(db, r["invoice"], r["paid"], r["outstanding"], r["status"])

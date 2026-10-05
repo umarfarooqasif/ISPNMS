@@ -1,3 +1,5 @@
+from decimal import Decimal
+from typing import Literal
 from functools import lru_cache
 
 from cryptography.fernet import Fernet
@@ -23,6 +25,17 @@ class Settings(BaseSettings):
     receipt_prefix: str = "RC"
     invoice_prefix: str = "INV"
     storage_dir: str = "/data/storage"
+
+    # Billing. A cycle is billed when its due date is within BILLING_LEAD_DAYS from the run date.
+    # What the Wasooli "Recharge Date" means: NEXT_DUE (the date the next payment is due) or
+    # LAST_RECHARGE (the date the customer last paid; the next due date is one month later).
+    # Only affects connections created by an import.
+    recharge_date_means: Literal["NEXT_DUE", "LAST_RECHARGE"] = "NEXT_DUE"
+    billing_lead_days: int = 5
+    # Late fees are OFF unless LATE_FEE_AMOUNT is greater than zero (flat fee per overdue invoice).
+    late_fee_amount: Decimal = Decimal("0")
+    late_fee_grace_days: int = 5
+    late_fee_due_days: int = 7
     # Interactive API docs expose the API surface, so they are off unless explicitly enabled.
     enable_docs: bool = False
 

@@ -219,9 +219,10 @@ class ConnectionCreate(BaseModel):
     package_id: uuid.UUID | None = None
     connection_type: ConnectionType
     install_date: date | None = None
+    next_due_date: date | None = None
     status: ConnectionStatus = "ACTIVE"
     monthly_price_override: Amount | None = Field(default=None, ge=0)
-    billing_day: int | None = Field(default=None, ge=1, le=28)
+    billing_day: int | None = Field(default=None, ge=1, le=31)
     area_id: uuid.UUID | None = None
     notes: str | None = None
     service_lines: list[ServiceLineIn] = []
@@ -234,9 +235,10 @@ class ConnectionUpdate(BaseModel):
     package_id: uuid.UUID | None = None
     connection_type: ConnectionType | None = None
     install_date: date | None = None
+    next_due_date: date | None = None
     status: ConnectionStatus | None = None
     monthly_price_override: Amount | None = Field(default=None, ge=0)
-    billing_day: int | None = Field(default=None, ge=1, le=28)
+    billing_day: int | None = Field(default=None, ge=1, le=31)
     area_id: uuid.UUID | None = None
     notes: str | None = None
 
@@ -263,6 +265,7 @@ class ConnectionOut(ORM):
     connection_type: str
     install_date: date | None
     source_recharge_date: date | None = None
+    next_due_date: date | None = None
     status: str
     monthly_price_override: Decimal | None
     billing_day: int | None
@@ -379,6 +382,7 @@ class LedgerEntryOut(ORM):
 
 class StatementOut(BaseModel):
     customer_id: uuid.UUID
+    billing_status: str | None = None  # PAID/DUE/PARTIAL/OVERDUE/SUSPENDED/DISCONNECTED/FREE
     balance: Decimal
     amount_due: Decimal
     credit: Decimal
@@ -433,3 +437,120 @@ class AuditOut(ORM):
 
 __all__ = [n for n in dir() if not n.startswith("_")]
 _ = C  # constants kept importable from here for routers
+
+
+# ------------------------------------------------------------------ billing runs / operations
+class BillRunRequest(BaseModel):
+    run_date: date | None = None            # default: today (in the configured timezone)
+    lead_days: int | None = Field(default=None, ge=0, le=60)  # default: BILLING_LEAD_DAYS
+    max_cycles: int = Field(default=1, ge=1, le=12)           # cycles billed per connection per run
+    skip_remaining: bool = False            # write off (and report) cycles beyond max_cycles
+
+
+class BillRunExecute(BillRunRequest):
+    confirm: bool = False                   # must be true: a real run creates invoices
+
+
+class LateFeeRequest(BaseModel):
+    run_date: date | None = None
+    amount: Amount | None = Field(default=None, gt=0)
+    grace_days: int | None = Field(default=None, ge=0, le=90)
+    due_days: int | None = Field(default=None, ge=0, le=90)
+
+
+class LateFeeExecute(LateFeeRequest):
+    confirm: bool = False
+
+
+class RunItemOut(ORM):
+    customer_id: uuid.UUID
+    connection_id: uuid.UUID | None = None
+    cycle_due_date: date | None = None
+    outcome: str
+    amount: Decimal
+    invoice_id: uuid.UUID | None = None
+    message: str | None = None
+
+
+class RunResultOut(BaseModel):
+    dry_run: bool
+    run_id: uuid.UUID | None = None
+    invoices_created: int
+    total_billed: Decimal
+    counts: dict[str, int]
+    behind_connections: int = 0
+    skipped_cycles: int = 0
+    items: list[RunItemOut]
+    items_truncated: bool = False
+
+
+class BillingRunOut(ORM):
+    id: uuid.UUID
+    kind: str
+    run_date: date
+    params: dict | None = None
+    invoices_created: int
+    total_billed: Decimal
+    summary: dict | None = None
+    created_by: uuid.UUID | None = None
+    created_at: datetime
+
+
+class OpeningBalanceRow(BaseModel):
+    wasooli_id: str | None = Field(default=None, max_length=64)
+    customer_id: uuid.UUID | None = None
+    amount: str = Field(max_length=20)     # a string so no float ever sneaks in
+    note: str | None = Field(default=None, max_length=300)
+
+
+class OpeningBalanceLoad(BaseModel):
+    as_of_date: date | None = None
+    dry_run: bool = True
+    rows: list[OpeningBalanceRow] = Field(min_length=1, max_length=5000)
+
+
+class OpeningBalanceResultOut(BaseModel):
+    index: int
+    status: str
+    customer_id: uuid.UUID | None = None
+    invoice_id: uuid.UUID | None = None
+    message: str | None = None
+
+
+class OpeningBalanceLoadOut(BaseModel):
+    dry_run: bool
+    counts: dict[str, int]
+    results: list[OpeningBalanceResultOut]
+
+
+class ConnectionStatusChange(BaseModel):
+    status: ConnectionStatus
+    reason: str = Field(min_length=3, max_length=300)
+    reconnection_fee: Amount | None = Field(default=None, ge=0)
+    next_due_date: date | None = None
+
+
+class ConnectionStatusOut(BaseModel):
+    connection: ConnectionOut
+    previous_status: str
+    reconnection_invoice: InvoiceOut | None = None
+
+
+class OutstandingRow(BaseModel):
+    customer_id: uuid.UUID
+    customer_code: str
+    full_name: str
+    mobile: str | None = None
+    balance: Decimal
+    oldest_due_date: date | None = None
+    days_overdue: int = 0
+    billing_status: str
+
+
+class SuspensionCandidate(BaseModel):
+    customer_id: uuid.UUID
+    full_name: str
+    oldest_due_date: date
+    days_overdue: int
+    outstanding: Decimal
+    connection_ids: list[uuid.UUID]

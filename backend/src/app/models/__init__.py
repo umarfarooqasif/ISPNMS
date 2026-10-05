@@ -10,6 +10,7 @@ from app.models.billing import (
     PaymentAllocation,
     Receipt,
 )
+from app.models.billing_ops import BillingRun, BillingRunItem, LateFee, OpeningBalance
 from app.models.collections import Collector, CollectorAreaAssignment, CollectorCustomerAssignment
 from app.models.imports import ImportRow, ImportRowDecision, ImportSession
 from app.models.masters import (
@@ -30,6 +31,7 @@ __all__ = [
     "User", "Role", "Permission", "RolePermission", "UserRole", "LoginHistory", "RefreshToken",
     "Area", "Street", "Package", "PackageAlias", "Customer", "CustomFieldDef",
     "CustomerCustomValue", "Connection", "ConnectionServiceLine", "ExternalRef",
+    "BillingRun", "BillingRunItem", "LateFee", "OpeningBalance",
     "BillingAccount", "LedgerEntry", "Invoice", "InvoiceLine", "Payment", "PaymentAllocation",
     "Receipt", "Collector", "CollectorAreaAssignment", "CollectorCustomerAssignment",
     "ImportSession", "ImportRow", "ImportRowDecision", "AuditLog",

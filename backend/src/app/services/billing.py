@@ -173,6 +173,51 @@ def open_invoices(db: Session, account_id: uuid.UUID) -> list[tuple[Invoice, Dec
     return [(i, paid.get(i.id, ZERO)) for i in invoices if i.total - paid.get(i.id, ZERO) > 0]
 
 
+def apply_unallocated_payments(db: Session, account_id: uuid.UUID) -> Decimal:
+    """Advance payments: puts money a customer already paid (but that no invoice absorbed) onto
+    their open invoices, oldest due first. Returns the amount applied. Caller holds the account lock.
+
+    The amount is capped by what the ledger says the customer really has on account
+    (open invoices - balance), so an advance that was refunded or reversed is never applied twice.
+    """
+    open_rows = open_invoices(db, account_id)
+    if not open_rows:
+        return ZERO
+    owed = [[inv, inv.total - paid] for inv, paid in open_rows]
+    cap = sum((o for _, o in owed), ZERO) - balance(db, account_id)
+    if cap <= ZERO:
+        return ZERO
+
+    payments = list(
+        db.scalars(
+            select(Payment)
+            .where(Payment.billing_account_id == account_id, Payment.status != "VOID")
+            .order_by(Payment.received_at, Payment.id)
+        )
+    )
+    applied = ZERO
+    for pay in payments:
+        spare = pay.amount - sum((a.amount for a in pay.allocations), ZERO)
+        touched = False
+        for row in owed:
+            if spare <= ZERO or applied >= cap:
+                break
+            take = min(row[1], spare, cap - applied)
+            if take <= ZERO:
+                continue
+            db.add(PaymentAllocation(payment_id=pay.id, invoice_id=row[0].id, amount=take))
+            row[1] -= take
+            spare -= take
+            applied += take
+            touched = True
+        if touched:
+            db.flush()
+            db.expire(pay, ["allocations"])
+        if applied >= cap:
+            break
+    return applied
+
+
 @dataclass
 class LineIn:
     charge_type: str
@@ -236,6 +281,7 @@ def create_invoice(
                 ref_id=invoice.id, connection_id=ln.connection_id,
             )
     db.flush()
+    apply_unallocated_payments(db, acct.id)  # advance payments settle the new invoice
     db.refresh(invoice)
     return invoice
 
