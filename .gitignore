@@ -12,3 +12,10 @@ storage/*
 *.dump
 *.enc
 .DS_Store
+
+# Flutter
+mobile/collector_app/.dart_tool/
+mobile/collector_app/build/
+mobile/collector_app/.flutter-plugins*
+mobile/collector_app/.packages
+mobile/collector_app/pubspec.lock

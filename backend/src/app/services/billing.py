@@ -328,7 +328,7 @@ def record_payment(
     db: Session, *, customer_id: uuid.UUID, amount, method: str, user_id: uuid.UUID | None,
     collector_id: uuid.UUID | None = None, connection_id: uuid.UUID | None = None,
     client_txn_id: str | None = None, collected_at: datetime | None = None,
-    notes: str | None = None, status: str = "POSTED",
+    notes: str | None = None, status: str = "POSTED", client_receipt_no: str | None = None,
 ) -> PaymentOutcome:
     amount = money(amount)
     if amount <= ZERO:
@@ -353,7 +353,7 @@ def record_payment(
 
     payment = Payment(
         billing_account_id=acct.id, connection_id=connection_id, amount=amount, method=method,
-        collector_id=collector_id, client_txn_id=client_txn_id,
+        collector_id=collector_id, client_txn_id=client_txn_id, client_receipt_no=client_receipt_no,
         collected_at=collected_at or datetime.now(UTC), status=status, notes=notes,
         created_by=user_id,
     )

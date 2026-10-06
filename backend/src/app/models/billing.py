@@ -119,6 +119,8 @@ class Payment(Base):
     method: Mapped[str] = mapped_column(String(16), nullable=False)
     collector_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("collectors.id"), index=True)
     client_txn_id: Mapped[str | None] = mapped_column(String(64))
+    # Provisional receipt number printed on the phone before the payment reached the server.
+    client_receipt_no: Mapped[str | None] = mapped_column(String(40))
     collected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     received_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -139,6 +141,7 @@ class Payment(Base):
         CheckConstraint(_in("status", C.PAYMENT_STATUSES), name="status"),
         # Idempotency for offline sync: same collector + same client txn id = same payment.
         UniqueConstraint("collector_id", "client_txn_id"),
+        UniqueConstraint("collector_id", "client_receipt_no", name="uq_payments_collector_receipt"),
     )
 
 

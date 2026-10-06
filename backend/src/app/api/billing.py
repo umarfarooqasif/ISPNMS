@@ -42,7 +42,8 @@ def _payment_out(db: Session, o: svc.PaymentOutcome) -> PaymentOut:
     return PaymentOut(
         id=p.id, customer_id=_customer_id_of(db, p.billing_account_id), amount=p.amount,
         method=p.method, status=p.status, collector_id=p.collector_id,
-        client_txn_id=p.client_txn_id, collected_at=p.collected_at, received_at=p.received_at,
+        client_txn_id=p.client_txn_id, client_receipt_no=p.client_receipt_no,
+        collected_at=p.collected_at, received_at=p.received_at,
         receipt_number=o.receipt.receipt_number if o.receipt else None,
         receipt_status=o.receipt.status if o.receipt else None,
         allocations=[AllocationOut.model_validate(a) for a in p.allocations],

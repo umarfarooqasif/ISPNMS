@@ -342,6 +342,7 @@ class PaymentOut(BaseModel):
     status: str
     collector_id: uuid.UUID | None
     client_txn_id: str | None
+    client_receipt_no: str | None = None  # provisional receipt number printed offline, if any
     collected_at: datetime
     received_at: datetime
     receipt_number: str | None
@@ -435,8 +436,6 @@ class AuditOut(ORM):
     ip: str | None
 
 
-__all__ = [n for n in dir() if not n.startswith("_")]
-_ = C  # constants kept importable from here for routers
 
 
 # ------------------------------------------------------------------ billing runs / operations
@@ -554,3 +553,108 @@ class SuspensionCandidate(BaseModel):
     days_overdue: int
     outstanding: Decimal
     connection_ids: list[uuid.UUID]
+
+
+# ------------------------------------------------------------------ collector mobile app
+class SnapshotConnection(BaseModel):
+    id: uuid.UUID
+    connection_code: str
+    internet_id: str | None = None
+    connection_type: str
+    status: str
+    package_name: str | None = None
+    package_name_ur: str | None = None
+    monthly_charge: Decimal | None = None
+    next_due_date: date | None = None
+
+
+class SnapshotInvoice(BaseModel):
+    id: uuid.UUID
+    invoice_number: str
+    period: date | None = None
+    issue_date: date
+    due_date: date
+    total: Decimal
+    outstanding: Decimal
+    status: str
+
+
+class SnapshotCustomer(BaseModel):
+    id: uuid.UUID
+    customer_code: str
+    full_name: str
+    full_name_ur: str | None = None
+    mobile: str | None = None
+    whatsapp: str | None = None
+    address: str | None = None
+    address_ur: str | None = None
+    house_no: str | None = None
+    area_name: str | None = None
+    balance: Decimal
+    amount_due: Decimal
+    credit: Decimal
+    billing_status: str
+    oldest_due_date: date | None = None
+    connections: list[SnapshotConnection]
+    open_invoices: list[SnapshotInvoice]
+
+
+class SnapshotPage(BaseModel):
+    generated_at: datetime
+    total: int
+    offset: int
+    limit: int
+    customers: list[SnapshotCustomer]
+
+
+class SyncPaymentIn(BaseModel):
+    """Deliberately loose (strings): a malformed item must be rejected on its own, never fail the batch."""
+
+    client_txn_id: str = Field(max_length=200)
+    customer_id: str = Field(max_length=64)
+    amount: str = Field(max_length=32)
+    method: str = Field(max_length=32)
+    collected_at: str | None = Field(default=None, max_length=64)
+    connection_id: str | None = Field(default=None, max_length=64)
+    notes: str | None = Field(default=None, max_length=1000)
+    client_receipt_no: str | None = Field(default=None, max_length=80)
+
+
+class SyncPaymentsIn(BaseModel):
+    payments: list[SyncPaymentIn] = Field(max_length=200)
+
+
+class SyncPaymentOut(BaseModel):
+    client_txn_id: str
+    status: Literal["SYNCED", "DUPLICATE", "REJECTED", "ERROR"]
+    code: str | None = None
+    reason: str | None = None
+    payment_id: uuid.UUID | None = None
+    receipt_number: str | None = None
+    allocated: Decimal | None = None
+    unallocated: Decimal | None = None
+    balance: Decimal | None = None
+    collected_at_adjusted: bool = False
+
+
+class SyncPaymentsOut(BaseModel):
+    counts: dict[str, int]
+    results: list[SyncPaymentOut]
+
+
+class MethodTotal(BaseModel):
+    method: str
+    count: int
+    total: Decimal
+
+
+class CollectionSummaryOut(BaseModel):
+    date: date
+    count: int
+    total: Decimal
+    by_method: list[MethodTotal]
+    voided_count: int
+
+
+__all__ = [n for n in dir() if not n.startswith("_")]
+_ = C  # constants kept importable from here for routers

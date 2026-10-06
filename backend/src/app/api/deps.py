@@ -54,6 +54,17 @@ def collector_of(db: Session, user: User) -> Collector | None:
     return db.scalar(select(Collector).where(Collector.user_id == user.id))
 
 
+def assigned_condition(collector: Collector):
+    """SQL condition: customers assigned to this collector, directly or through an assigned area."""
+    direct = select(CollectorCustomerAssignment.customer_id).where(
+        CollectorCustomerAssignment.collector_id == collector.id
+    )
+    areas = select(CollectorAreaAssignment.area_id).where(
+        CollectorAreaAssignment.collector_id == collector.id
+    )
+    return or_(Customer.id.in_(direct), Customer.area_id.in_(areas))
+
+
 def customer_scope(db: Session, user: User):
     """Returns None for unrestricted access, or a SQL condition limiting customers.
 
@@ -67,13 +78,7 @@ def customer_scope(db: Session, user: User):
         collector = collector_of(db, user)
         if collector is None or collector.status != "ACTIVE":
             return Customer.id.in_([])  # sees nothing
-        direct = select(CollectorCustomerAssignment.customer_id).where(
-            CollectorCustomerAssignment.collector_id == collector.id
-        )
-        areas = select(CollectorAreaAssignment.area_id).where(
-            CollectorAreaAssignment.collector_id == collector.id
-        )
-        return or_(Customer.id.in_(direct), Customer.area_id.in_(areas))
+        return assigned_condition(collector)
     raise HTTPException(403, "Permission denied")
 
 
