@@ -89,19 +89,15 @@ class SyncService {
   /// Downloads all assigned customers. The old list is replaced only after every page arrived,
   /// so a connection that drops half way never leaves the phone with a partial customer list.
   Future<DateTime> downloadSnapshot({int pageSize = 300}) async {
-    final all = <Customer>[];
-    DateTime? generatedAt;
-    var offset = 0;
-    while (true) {
-      final page = await api.fetchSnapshot(offset: offset, limit: pageSize);
-      generatedAt ??= page.generatedAt;
+    var page = await api.fetchSnapshot(offset: 0, limit: pageSize);
+    final generatedAt = page.generatedAt;
+    final all = <Customer>[...page.customers];
+    while (page.customers.isNotEmpty && all.length < page.total) {
+      page = await api.fetchSnapshot(offset: all.length, limit: pageSize);
       all.addAll(page.customers);
-      offset += page.customers.length;
-      if (page.customers.isEmpty || offset >= page.total) break;
     }
-    final stamp = generatedAt ?? DateTime.now().toUtc();
-    await customers.replaceCustomers(all, stamp);
-    return stamp;
+    await customers.replaceCustomers(all, generatedAt);
+    return generatedAt;
   }
 
   /// What the collector does before leaving and when signal returns: send first, then refresh.

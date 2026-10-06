@@ -21,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    final pages = const [CustomersTab(), TodayTab(), SyncTab()];
+    const pages = [CustomersTab(), TodayTab(), SyncTab()];
     return Scaffold(
       appBar: AppBar(
         title: Text(['Customers', 'Today', 'Sync'][_tab]),

@@ -19,15 +19,15 @@ void main() {
   test('toApi always has two decimals', () {
     expect(Money.parse('500').toApi(), '500.00');
     expect(Money.parse('500.5').toApi(), '500.50');
-    expect(Money(-70050).toApi(), '-700.50');
-    expect(Money(5).toApi(), '0.05');
+    expect(const Money(-70050).toApi(), '-700.50');
+    expect(const Money(5).toApi(), '0.05');
   });
 
   test('format groups thousands and hides zero paisa', () {
     expect(Money.parse('12500').format(), 'Rs 12,500');
     expect(Money.parse('1234567.5').format(), 'Rs 1,234,567.50');
     expect(Money.parse('999').format(), 'Rs 999');
-    expect(Money(-100000).format(), '-Rs 1,000');
+    expect(const Money(-100000).format(), '-Rs 1,000');
   });
 
   test('arithmetic and comparison', () {

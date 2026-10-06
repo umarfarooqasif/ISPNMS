@@ -13,7 +13,10 @@ SRC="${1:-}"
 MODE="${2:-verify}"
 [ -n "$SRC" ] || die "usage: restore.sh <backup-file|latest> [--apply|--env-only]"
 if [ "$SRC" = "latest" ]; then
-  SRC="$(ls -1 backups/isp-*.tar.enc 2>/dev/null | sort | tail -n1 || true)"
+  SRC=""
+  for f in backups/isp-*.tar.enc; do   # names carry a timestamp, so the last one is the newest
+    if [ -e "$f" ]; then SRC="$f"; fi
+  done
   [ -n "$SRC" ] || die "no backups found in $ROOT/backups"
 fi
 [ -f "$SRC" ] || die "backup file not found: $SRC"
@@ -45,6 +48,8 @@ if [ "$MODE" = "verify" ]; then
   echo "[restore] verifying $SRC in a scratch database (live data is untouched)"
   psql_admin -c "DROP DATABASE IF EXISTS isp_restore_test WITH (FORCE)" >/dev/null
   psql_admin -c "CREATE DATABASE isp_restore_test" >/dev/null
+  # cleanup() is called through the EXIT trap below, which shellcheck cannot see.
+  # shellcheck disable=SC2317
   cleanup() { psql_admin -c "DROP DATABASE IF EXISTS isp_restore_test WITH (FORCE)" >/dev/null 2>&1 || true; }
   trap 'cleanup; rm -rf "$TMP"' EXIT
   dc exec -T postgres pg_restore -U isp -d isp_restore_test --no-owner --exit-on-error < "$TMP/db.dump"
@@ -75,7 +80,7 @@ psql_admin -c "CREATE DATABASE isp OWNER isp" >/dev/null
 dc exec -T postgres pg_restore -U isp -d isp --no-owner --exit-on-error < "$TMP/db.dump"
 
 echo "[restore] restoring uploaded files"
-if [ -d storage ] && [ -n "$(ls -A storage 2>/dev/null | grep -v '^.gitkeep$' || true)" ]; then
+if [ -d storage ] && [ -n "$(find storage -mindepth 1 ! -name .gitkeep -print -quit 2>/dev/null)" ]; then
   mv storage "storage.pre-restore.$(date +%Y%m%d-%H%M%S)"
 fi
 mkdir -p storage

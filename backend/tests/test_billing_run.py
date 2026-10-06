@@ -244,7 +244,7 @@ def test_one_bad_customer_does_not_stop_the_run(client, admin, db, mk_customer):
     good, bad = mk_customer("Good"), mk_customer("Bad")
     mk_conn(client, admin, good)
     conn = mk_conn(client, admin, bad, due="1900-01-01")   # implausible date: planning raises
-    r = run(client, admin, lead_days=0)
+    r = run(client, admin)   # default lead window: the good customer (due 9 Oct) is billed
     assert r["invoices_created"] == 1 and sorted(r["counts"]) == ["ERROR", "INVOICED"]
     assert statement(client, admin, good)["balance"] == "1000.00"
     assert statement(client, admin, bad)["balance"] == "0.00"
@@ -306,7 +306,7 @@ def test_a_partial_advance_leaves_the_rest_due(client, admin, mk_customer):
 # ------------------------------------------------------------------ late fees
 def _overdue_invoice(client, h, cust, amount="1000.00", due="2026-09-01"):
     r = client.post(f"{API}/invoices", headers=h, json={
-        "customer_id": cust["id"], "issue_date": "2026-08-01", "due_date": due,
+        "customer_id": cust["id"], "issue_date": min(due, "2026-08-01"), "due_date": due,
         "lines": [{"charge_type": "INTERNET", "amount": amount}]})
     assert r.status_code == 201, r.text
     return r.json()

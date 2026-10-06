@@ -32,7 +32,12 @@ class _CustomerScreenState extends State<CustomerScreen> {
     if (c == null) return;
     final bal = await app.db.estimatedBalance(c);
     final mine = await app.db.history(customerId: c.id, limit: 20);
-    if (mounted) setState(() => (_c, _balance, _mine) = (c, bal, mine));
+    if (!mounted) return;
+    setState(() {
+      _c = c;
+      _balance = bal;
+      _mine = mine;
+    });
   }
 
   Future<void> _collect() async {
@@ -205,6 +210,7 @@ class _CollectScreenState extends State<CollectScreen> {
       );
       if (ok != true) return;
     }
+    if (!mounted) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -245,7 +251,7 @@ class _CollectScreenState extends State<CollectScreen> {
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
-          value: _method,
+          initialValue: _method,
           decoration: const InputDecoration(labelText: 'Payment method', border: OutlineInputBorder()),
           items: [for (final m in collectorMethods) DropdownMenuItem(value: m, child: Text(methodLabel(m)))],
           onChanged: (v) => setState(() => _method = v ?? _method),
@@ -253,7 +259,7 @@ class _CollectScreenState extends State<CollectScreen> {
         if (billable.length > 1) ...[
           const SizedBox(height: 16),
           DropdownButtonFormField<String?>(
-            value: _connectionId,
+            initialValue: _connectionId,
             decoration: const InputDecoration(labelText: 'For connection (optional)', border: OutlineInputBorder()),
             items: [
               const DropdownMenuItem(value: null, child: Text('Whole account (oldest bill first)')),
