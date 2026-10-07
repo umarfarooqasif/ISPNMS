@@ -136,6 +136,7 @@ def test_offline_payment_syncs_and_keeps_the_receipt_number_printed_on_paper(
     assert pay.client_receipt_no == "OFF-C01-0001" and pay.collected_at.date() == date(2026, 10, 3)
     history = client.get(f"{API}/payments", headers=ch).json()
     assert history[0]["client_receipt_no"] == "OFF-C01-0001" and history[0]["receipt_number"] == "RC-000001"
+    assert history[0]["customer_name"] == c["full_name"] and history[0]["customer_code"] == c["customer_code"]
 
 
 def test_syncing_the_same_payment_again_never_creates_a_second_one(client, admin, make_user, mk_customer, db):

@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
+import { RecordPayment } from "@/components/RecordPayment";
+import { useCan } from "@/components/Shell";
 import { Card, ErrorBox, Loading, PageHeader, Stat, StatusBadge } from "@/components/ui";
-import { fmtDate, isPositiveMoney, money } from "@/lib/format";
+import { METHOD_LABEL } from "@/lib/billingview";
+import { fmtDate, fmtDateTime, isPositiveMoney, money } from "@/lib/format";
 import { useFetch } from "@/lib/hooks";
-import type { Area, Connection, Customer, Statement } from "@/lib/types";
+import type { Area, Connection, Customer, Payment, Statement } from "@/lib/types";
 
 export default function CustomerPage() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +17,8 @@ export default function CustomerPage() {
   const connections = useFetch<Connection[]>(`/customers/${id}/connections`);
   const statement = useFetch<Statement>(`/customers/${id}/statement`);
   const areas = useFetch<Area[]>("/areas");
+  const can = useCan();
+  const payments = useFetch<Payment[]>(can("payment.view") ? `/payments?customer_id=${id}&limit=10` : null);
 
   if (customer.loading && !customer.data) return <Loading />;
   if (!customer.data) return <ErrorBox message={customer.error ?? "Customer not found."} onRetry={customer.reload} />;
@@ -37,6 +42,11 @@ export default function CustomerPage() {
         <Stat label="Amount due" value={st ? money(st.amount_due) : "…"} />
         <Stat label="Advance credit" value={st ? money(st.credit) : "…"} />
       </div>
+
+      {can("payment.create") && c.status !== "ARCHIVED" ? (
+        <RecordPayment customerId={c.id} customerName={c.full_name}
+          onDone={() => { statement.reload(); payments.reload(); }} />
+      ) : null}
 
       <div className="grid">
         <Card title="Details">
@@ -85,6 +95,32 @@ export default function CustomerPage() {
           </div>
         ) : null}
       </Card>
+
+      {can("payment.view") ? (
+        <Card title="Recent payments">
+          {payments.error ? <ErrorBox message={payments.error} onRetry={payments.reload} /> : null}
+          {payments.loading && !payments.data ? <Loading /> : null}
+          {payments.data && payments.data.length === 0 ? <p className="muted">No payments yet.</p> : null}
+          {payments.data && payments.data.length > 0 ? (
+            <div className="table-wrap">
+              <table className="table">
+                <thead><tr><th>Date</th><th>Receipt</th><th>Method</th><th className="right">Amount</th><th>Status</th></tr></thead>
+                <tbody>
+                  {payments.data.map((p) => (
+                    <tr key={p.id}>
+                      <td>{fmtDateTime(p.collected_at)}</td>
+                      <td><Link href={`/payments/${p.id}`}>{p.receipt_number ?? "view"}</Link></td>
+                      <td>{METHOD_LABEL[p.method] ?? p.method}</td>
+                      <td className="right">{money(p.amount)}</td>
+                      <td><StatusBadge status={p.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </Card>
+      ) : null}
 
       <Card title="Unpaid bills">
         {statement.error ? <ErrorBox message={statement.error} onRetry={statement.reload} /> : null}

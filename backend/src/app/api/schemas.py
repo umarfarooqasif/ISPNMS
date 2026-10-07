@@ -343,6 +343,8 @@ class PaymentOut(BaseModel):
     collector_id: uuid.UUID | None
     client_txn_id: str | None
     client_receipt_no: str | None = None  # provisional receipt number printed offline, if any
+    customer_name: str | None = None
+    customer_code: str | None = None
     collected_at: datetime
     received_at: datetime
     receipt_number: str | None
@@ -463,6 +465,8 @@ class LateFeeExecute(LateFeeRequest):
 
 class RunItemOut(ORM):
     customer_id: uuid.UUID
+    customer_name: str | None = None
+    customer_code: str | None = None
     connection_id: uuid.UUID | None = None
     cycle_due_date: date | None = None
     outcome: str

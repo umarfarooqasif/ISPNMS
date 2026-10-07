@@ -31,13 +31,25 @@ router = APIRouter(tags=["billing-operations"])
 PREVIEW_ITEM_LIMIT = 500
 
 
-def _result_out(result: runs.RunResult) -> RunResultOut:
+def _with_names(db: Session, items: list[RunItemOut]) -> list[RunItemOut]:
+    """Adds each customer's name and code so screens can show people, not ids."""
+    ids = {i.customer_id for i in items}
+    if not ids:
+        return items
+    names = {c.id: (c.full_name, c.customer_code)
+             for c in db.scalars(select(Customer).where(Customer.id.in_(ids)))}
+    for item in items:
+        item.customer_name, item.customer_code = names.get(item.customer_id, (None, None))
+    return items
+
+
+def _result_out(db: Session, result: runs.RunResult) -> RunResultOut:
     shown = result.items[:PREVIEW_ITEM_LIMIT]
     return RunResultOut(
         dry_run=result.dry_run, run_id=result.run_id, invoices_created=result.invoices_created,
         total_billed=result.total_billed, counts=result.counts,
         behind_connections=result.behind_connections, skipped_cycles=result.skipped_cycles,
-        items=[RunItemOut.model_validate(i, from_attributes=True) for i in shown],
+        items=_with_names(db, [RunItemOut.model_validate(i, from_attributes=True) for i in shown]),
         items_truncated=len(result.items) > len(shown),
     )
 
@@ -57,7 +69,7 @@ def preview_bill_run(body: BillRunRequest, db: Session = Depends(get_db),
         db, run_date=body.run_date, lead_days=body.lead_days, max_cycles=body.max_cycles,
         skip_remaining=body.skip_remaining, user_id=user.id, dry_run=True)
     db.rollback()
-    return _result_out(result)
+    return _result_out(db, result)
 
 
 @router.post("/billing/runs", response_model=RunResultOut, status_code=201)
@@ -75,7 +87,7 @@ def execute_bill_run(body: BillRunExecute, request: Request, db: Session = Depen
                      "total_billed": result.total_billed, "counts": result.counts},
               request=request)
     db.commit()
-    return _result_out(result)
+    return _result_out(db, result)
 
 
 @router.get("/billing/runs", response_model=list[BillingRunOut])
@@ -105,7 +117,8 @@ def run_items(run_id: uuid.UUID, outcome: str | None = None, limit: int = 100, o
     if outcome:
         stmt = stmt.where(BillingRunItem.outcome == outcome)
     stmt = stmt.order_by(BillingRunItem.outcome, BillingRunItem.cycle_due_date, BillingRunItem.id)
-    return list(db.scalars(stmt.limit(min(max(limit, 1), 500)).offset(max(offset, 0))))
+    rows = list(db.scalars(stmt.limit(min(max(limit, 1), 500)).offset(max(offset, 0))))
+    return _with_names(db, [RunItemOut.model_validate(r) for r in rows])
 
 
 # ------------------------------------------------------------------ late fees
@@ -116,7 +129,7 @@ def preview_late_fees(body: LateFeeRequest, db: Session = Depends(get_db),
                                 grace_days=body.grace_days, due_days=body.due_days,
                                 user_id=user.id, dry_run=True)
     db.rollback()
-    return _result_out(result)
+    return _result_out(db, result)
 
 
 @router.post("/billing/late-fees", response_model=RunResultOut, status_code=201)
@@ -132,7 +145,7 @@ def execute_late_fees(body: LateFeeExecute, request: Request, db: Session = Depe
                      "counts": result.counts},
               request=request)
     db.commit()
-    return _result_out(result)
+    return _result_out(db, result)
 
 
 # ------------------------------------------------------------------ opening balances (optional)

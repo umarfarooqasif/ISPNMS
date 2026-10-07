@@ -169,3 +169,85 @@ export interface CommitResult {
   areas_to_create?: string[];
   result?: Record<string, number>;
 }
+
+// ------------------------------------------------------------------ billing and payments (stage 2)
+
+export interface RunItem {
+  customer_id: string;
+  customer_name: string | null;
+  customer_code: string | null;
+  connection_id: string | null;
+  cycle_due_date: string | null;
+  outcome: string;
+  amount: string;
+  invoice_id: string | null;
+  message: string | null;
+}
+
+export interface RunResult {
+  dry_run: boolean;
+  run_id: string | null;
+  invoices_created: number;
+  total_billed: string;
+  counts: Record<string, number>;
+  behind_connections: number;
+  skipped_cycles: number;
+  items: RunItem[];
+  items_truncated: boolean;
+}
+
+export interface BillingRunFull extends BillingRun {
+  params: Record<string, unknown> | null;
+  summary: { counts?: Record<string, number>; behind_connections?: number; skipped_cycles?: number } | null;
+  created_by: string | null;
+}
+
+export interface SuspensionCandidate {
+  customer_id: string;
+  full_name: string;
+  oldest_due_date: string;
+  days_overdue: number;
+  outstanding: string;
+  connection_ids: string[];
+}
+
+export interface OpeningBalanceResult {
+  index: number;
+  status: string;
+  customer_id: string | null;
+  invoice_id: string | null;
+  message: string | null;
+}
+
+export interface OpeningBalanceLoad {
+  dry_run: boolean;
+  counts: Record<string, number>;
+  results: OpeningBalanceResult[];
+}
+
+export interface Allocation {
+  invoice_id: string;
+  amount: string;
+}
+
+export interface Payment {
+  id: string;
+  customer_id: string;
+  amount: string;
+  method: string;
+  status: string;
+  collector_id: string | null;
+  client_txn_id: string | null;
+  client_receipt_no: string | null;
+  customer_name: string | null;
+  customer_code: string | null;
+  collected_at: string;
+  received_at: string;
+  receipt_number: string | null;
+  receipt_status: string | null;
+  allocations: Allocation[];
+  unallocated: string;
+  balance: string;
+  replayed: boolean;
+  void_reason: string | null;
+}

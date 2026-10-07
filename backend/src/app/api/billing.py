@@ -11,7 +11,7 @@ from app.api.schemas import (
     PaymentOut, PaymentVoid, ReceiptOut, RefundCreate, StatementOut, AllocationOut,
 )
 from app.core.db import get_db
-from app.models import BillingAccount, Invoice, Payment, Receipt, User
+from app.models import BillingAccount, Customer, Invoice, Payment, Receipt, User
 from app.services import audit
 from app.services import billing as svc
 from app.services.billing_run import customer_billing_status
@@ -39,8 +39,12 @@ def _invoice_out(db: Session, inv: Invoice, paid=None, outstanding=None, status=
 
 def _payment_out(db: Session, o: svc.PaymentOutcome) -> PaymentOut:
     p = o.payment
+    customer_id = _customer_id_of(db, p.billing_account_id)
+    customer = db.get(Customer, customer_id)
     return PaymentOut(
-        id=p.id, customer_id=_customer_id_of(db, p.billing_account_id), amount=p.amount,
+        id=p.id, customer_id=customer_id,
+        customer_name=customer.full_name if customer else None,
+        customer_code=customer.customer_code if customer else None, amount=p.amount,
         method=p.method, status=p.status, collector_id=p.collector_id,
         client_txn_id=p.client_txn_id, client_receipt_no=p.client_receipt_no,
         collected_at=p.collected_at, received_at=p.received_at,

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { detailOf, qs } from "../src/lib/api";
-import { fmtBytes, fmtDate, isPositiveMoney, money, plural } from "../src/lib/format";
+import { fmtBytes, fmtDate, isPositiveMoney, money, plural, sumMoney } from "../src/lib/format";
 import {
   attachableCustomers, candidateText, canCommit, commitWarnings, defaultRowStatus, isBusy,
   issueLabel, rowName, summaryView,
@@ -158,5 +158,18 @@ describe("import screen logic", () => {
     assert.deepEqual(commitWarnings({ areas_to_create: ["A", "B"], packages_to_create: ["P"] }), [
       "2 new area(s) will be created", "1 new package(s) will be created",
     ]);
+  });
+});
+
+describe("sumMoney", () => {
+  it("adds exactly, with no floating-point drift", () => {
+    assert.equal(sumMoney(["0.10", "0.20"]), "0.30");
+    assert.equal(sumMoney(["1500.50", "1500.50", "0.01"]), "3001.01");
+    assert.equal(sumMoney(["999999999999.99", "0.01"]), "1000000000000.00");
+  });
+  it("handles negatives, blanks and junk", () => {
+    assert.equal(sumMoney(["100", "-250.5"]), "-150.50");
+    assert.equal(sumMoney([]), "0.00");
+    assert.equal(sumMoney([null, undefined, "", "abc", "5"]), "5.00");
   });
 });

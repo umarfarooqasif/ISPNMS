@@ -1,8 +1,8 @@
-# Phase 6: admin web dashboard (stage 1)
+# Phase 6: admin web dashboard (stages 1 and 2)
 
 A browser interface for the office, served by the `web` container (Next.js) behind Caddy at the same
-address as the API. Stage 1 covers login, the dashboard, customers, and the Wasooli import. Billing,
-payments, collectors and reports are stage 2.
+address as the API. Stage 1: login, dashboard, customers, Wasooli import. Stage 2 (below): billing,
+payments and receipts. Stage 3 (next): collectors, users, connection status and the audit log.
 
 ## What you can do now
 
@@ -18,6 +18,29 @@ payments, collectors and reports are stage 2.
      *Attach to <existing customer>*, or *Skip*; or decide all at once.
   4. **Preview** the import (changes nothing), tick the option for undecided duplicates if you want them,
      then **Import now** and confirm.
+
+## Stage 2: billing and payments
+
+* **Record a payment** on any customer's page (office cash, bank, JazzCash, Easypaisa, card, QR). You are
+  asked to confirm the amount and customer first. It settles the oldest unpaid bill first; any extra is
+  kept as advance credit, and later bills use that credit automatically.
+* **Payments** lists every payment with filters (recorded or cancelled, date range). Open one to see its
+  receipt; users with the right permission can **cancel** a payment (a reason is required, it is audited,
+  and the customer's bills become unpaid again).
+* **Bill run:** settings, then **Preview**, which changes nothing and lists every customer and what would
+  happen, with problems first (no price, no due date, failures). The create button stays disabled until
+  you have previewed the *current* settings and ticked the box, then asks you to confirm. For your first
+  run choose 1 month and tick *leave out older months*; see `docs/phase3.md`.
+* **Billing history:** every run with its full record, filterable by what happened.
+* **Who owes money:** balances by area and minimum amount, plus a **long overdue** list. It never suspends
+  anyone automatically.
+* **Late fees:** off until a fee is set; preview, then charge. Once per bill, never on fees.
+* **Opening balances (optional):** paste `wasooli_id,amount,note` lines, check, then load. Bad lines are
+  reported with their line number and left out.
+
+Safeguards on every action that changes money: it needs a preview of the exact current settings,
+an explicit tick and a confirmation; the server independently refuses a real run without
+`"confirm": true`; double clicks are blocked while a request is running.
 
 ## How login is kept safe
 
@@ -45,8 +68,10 @@ After updating, check: `docker compose ps` (web should be *healthy*) then open y
 
 * On the review screen, rows you decided during this visit are marked; after a refresh they show as
   undecided even though the decision is saved on the server (the API does not return it per row).
-* No screens yet for payments, billing runs, late fees, opening balances, collectors, users or
-  connection status. Those API features exist and get screens in stage 2.
+* No screens yet for collectors, users, connection status (suspend, reconnect), creating or editing
+  customers, or the audit log. Those API features exist and get screens in stage 3.
+* The bill-run preview lists the first 200 customers on screen; the complete list is saved with the
+  run once you bill and can be browsed under Billing history.
 * Not yet checked in a real browser by the author: please report anything that looks or behaves wrongly.
 
 ## Developing

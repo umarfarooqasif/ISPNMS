@@ -6,6 +6,7 @@ import { createContext, useContext, type ReactNode } from "react";
 
 import { CSRF_HEADER, CSRF_VALUE } from "@/lib/bff-core";
 import { useFetch } from "@/lib/hooks";
+import { isActive, visibleNav } from "@/lib/nav";
 import type { Me } from "@/lib/types";
 import { ErrorBox, Loading } from "./ui";
 
@@ -22,12 +23,6 @@ export function useCan(): (permission: string) => boolean {
   const me = useMe();
   return (permission) => me.permissions.includes(permission);
 }
-
-const NAV: { href: string; label: string; permission?: string }[] = [
-  { href: "/", label: "Dashboard" },
-  { href: "/customers", label: "Customers", permission: "customer.view" },
-  { href: "/import", label: "Import customers", permission: "import.upload" },
-];
 
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -50,21 +45,17 @@ export function Shell({ children }: { children: ReactNode }) {
     );
   }
   const me = meState.data;
-  const allowed = (p?: string) => !p || me.permissions.includes(p);
 
   return (
     <MeContext.Provider value={me}>
       <div className="shell">
         <nav className="side" aria-label="Main">
           <div className="brand">ISP Billing</div>
-          {NAV.filter((n) => allowed(n.permission)).map((n) => {
-            const active = n.href === "/" ? pathname === "/" : pathname.startsWith(n.href);
-            return (
-              <Link key={n.href} href={n.href} className={active ? "active" : ""}>
-                {n.label}
-              </Link>
-            );
-          })}
+          {visibleNav(me.permissions).map((n) => (
+            <Link key={n.href} href={n.href} className={isActive(pathname, n.href) ? "active" : ""}>
+              {n.label}
+            </Link>
+          ))}
           <div className="spacer" />
           <div className="who">{me.full_name}<br />{me.roles.join(", ")}</div>
           <a href="#" onClick={(e) => { e.preventDefault(); void logout(); }}>Log out</a>

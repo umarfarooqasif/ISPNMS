@@ -70,6 +70,7 @@ def test_preview_writes_nothing(client, admin, db, mk_customer):
     p = preview(client, admin)
     assert p["dry_run"] is True and p["run_id"] is None
     assert p["invoices_created"] == 1 and p["total_billed"] == "1000.00" and p["counts"] == {"INVOICED": 1}
+    assert p["items"][0]["customer_name"] == c["full_name"] and p["items"][0]["customer_code"] == c["customer_code"]
     assert statement(client, admin, c)["balance"] == "0.00"
     assert conn_now(client, admin, conn)["next_due_date"] == "2026-10-09"
     assert db.scalar(select(func.count()).select_from(Invoice)) == 0
@@ -105,6 +106,7 @@ def test_run_bills_a_due_connection_and_advances_the_due_date(client, admin, mk_
     assert len(runs) == 1 and runs[0]["kind"] == "MONTHLY" and runs[0]["invoices_created"] == 1
     items = client.get(f"{API}/billing/runs/{result['run_id']}/items", headers=admin).json()
     assert [i["outcome"] for i in items] == ["INVOICED"] and items[0]["invoice_id"] == inv["id"]
+    assert items[0]["customer_name"] == c["full_name"]   # the screens show people, not ids
 
 
 def test_running_again_creates_nothing_new(client, admin, mk_customer):

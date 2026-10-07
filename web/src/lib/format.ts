@@ -51,3 +51,17 @@ export function fmtBytes(n: number): string {
 export function plural(n: number, one: string, many = `${one}s`): string {
   return `${n.toLocaleString("en-US")} ${n === 1 ? one : many}`;
 }
+
+/** Exact sum of money strings ("1500.50"), computed in whole paisa. Returns a string like "3001.00". */
+export function sumMoney(values: (string | null | undefined)[]): string {
+  let paisa = 0n;
+  for (const v of values) {
+    const m = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec((v ?? "").trim());
+    if (!m) continue;
+    const p = BigInt(m[2]) * 100n + BigInt(((m[3] ?? "") + "00").slice(0, 2));
+    paisa += m[1] === "-" ? -p : p;
+  }
+  const neg = paisa < 0n;
+  const abs = neg ? -paisa : paisa;
+  return `${neg ? "-" : ""}${abs / 100n}.${String(abs % 100n).padStart(2, "0")}`;
+}
