@@ -19,7 +19,9 @@
 		reverse_proxy api:8000
 	}
 
+	# Everything else is the web interface. (Caddy does not wait for it at start-up, so a problem with
+	# the web container can never take the API, and the collector app, offline.)
 	handle {
-		respond "ISP Billing API is running. The web interface arrives in a later phase." 200
+		reverse_proxy web:3000
 	}
 }
