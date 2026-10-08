@@ -2,10 +2,15 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
 
+import { AddConnection } from "@/components/AddConnection";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
+import { EditCustomer } from "@/components/EditCustomer";
 import { RecordPayment } from "@/components/RecordPayment";
 import { useCan } from "@/components/Shell";
-import { Card, ErrorBox, Loading, PageHeader, Stat, StatusBadge } from "@/components/ui";
+import { Card, ErrorBox, Loading, Notice, PageHeader, Stat, StatusBadge } from "@/components/ui";
+import { api, ApiError } from "@/lib/api";
 import { METHOD_LABEL } from "@/lib/billingview";
 import { fmtDate, fmtDateTime, isPositiveMoney, money } from "@/lib/format";
 import { useFetch } from "@/lib/hooks";
@@ -18,6 +23,9 @@ export default function CustomerPage() {
   const statement = useFetch<Statement>(`/customers/${id}/statement`);
   const areas = useFetch<Area[]>("/areas");
   const can = useCan();
+  const [editing, setEditing] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
   const payments = useFetch<Payment[]>(can("payment.view") ? `/payments?customer_id=${id}&limit=10` : null);
 
   if (customer.loading && !customer.data) return <Loading />;
@@ -26,6 +34,17 @@ export default function CustomerPage() {
   const area = areas.data?.find((a) => a.id === c.area_id);
   const st = statement.data;
 
+  async function archive() {
+    if (!window.confirm(`Archive ${c.full_name}?\n\nThey disappear from the customer list and are no longer billed. Their history is kept.`)) return;
+    setArchiveError(null);
+    try {
+      await api(`/customers/${c.id}/archive`, { method: "POST" });
+      customer.reload();
+    } catch (e) {
+      setArchiveError(e instanceof ApiError ? e.message : "Could not archive.");
+    }
+  }
+
   return (
     <>
       <p className="small"><Link href="/customers">← All customers</Link></p>
@@ -33,7 +52,18 @@ export default function CustomerPage() {
         title={c.full_name}
         subtitle={<><span className="mono">{c.customer_code}</span>{" "}<StatusBadge status={c.status} />{" "}
           {st?.billing_status ? <StatusBadge status={st.billing_status} /> : null}</>}
+        actions={
+          <div className="actions">
+            {can("customer.update") && c.status !== "ARCHIVED" ? <button className="btn secondary" onClick={() => setEditing(!editing)}>Edit details</button> : null}
+            {can("connection.create") && c.status !== "ARCHIVED" ? <button className="btn secondary" onClick={() => setAdding(!adding)}>Add connection</button> : null}
+            {can("customer.archive") && c.status !== "ARCHIVED" ? <button className="btn secondary" onClick={() => void archive()}>Archive</button> : null}
+          </div>
+        }
       />
+      {archiveError ? <Notice kind="error">{archiveError}</Notice> : null}
+      {c.status === "ARCHIVED" ? <Notice kind="warn">This customer is archived. They are not billed and do not appear in the normal list.</Notice> : null}
+      {editing ? <EditCustomer customer={c} areas={areas.data ?? []} onSaved={customer.reload} onClose={() => setEditing(false)} /> : null}
+      {adding ? <AddConnection customerId={c.id} onSaved={() => { connections.reload(); statement.reload(); }} onClose={() => setAdding(false)} /> : null}
       {c.full_name_ur ? <p className="urdu" style={{ marginTop: "-.5rem" }}>{c.full_name_ur}</p> : null}
 
       <div className="stats">
@@ -72,7 +102,7 @@ export default function CustomerPage() {
           <div className="table-wrap">
             <table className="table">
               <thead>
-                <tr><th>Code</th><th>Internet ID</th><th>Type</th><th>Status</th><th>Monthly</th><th>Next due</th></tr>
+                <tr><th>Code</th><th>Internet ID</th><th>Type</th><th>Status</th><th>Monthly</th><th>Next due</th>{can("connection.status") ? <th></th> : null}</tr>
               </thead>
               <tbody>
                 {connections.data.map((k) => {
@@ -86,7 +116,10 @@ export default function CustomerPage() {
                       <td>
                         {k.monthly_price_override ? <>{money(k.monthly_price_override)} <span className="small muted">(special)</span></> : lines || "—"}
                       </td>
-                      <td>{fmtDate(k.next_due_date) || "—"}</td>
+                      <td>{fmtDate(k.next_due_date) || <span className="muted">not set</span>}</td>
+                      {can("connection.status") ? (
+                        <td><ConnectionStatus connection={k} onChanged={() => { connections.reload(); statement.reload(); }} /></td>
+                      ) : null}
                     </tr>
                   );
                 })}

@@ -251,3 +251,71 @@ export interface Payment {
   replayed: boolean;
   void_reason: string | null;
 }
+
+// ------------------------------------------------------------------ administration (stage 3)
+
+export interface UserRow {
+  id: string;
+  username: string;
+  full_name: string;
+  email: string | null;
+  is_active: boolean;
+  role_codes: string[];
+}
+
+export interface RoleRow {
+  code: string;
+  name: string;
+  permissions: string[];
+}
+
+export interface CollectorRow {
+  id: string;
+  user_id: string;
+  code: string;
+  status: string;
+  username: string | null;
+  full_name: string | null;
+}
+
+export interface AssignedCustomer {
+  customer_id: string;
+  customer_code: string;
+  full_name: string;
+  sort_order: number;
+}
+
+export interface Assignments {
+  area_ids: string[];
+  customers: AssignedCustomer[];
+}
+
+export interface AuditEntry {
+  id: number;
+  at: string;
+  user_id: string | null;
+  action: string;
+  entity: string | null;
+  entity_id: string | null;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  ip: string | null;
+}
+
+export interface PackageRow {
+  id: string;
+  code: string;
+  name: string;
+  display_name: string;
+  display_name_ur: string | null;
+  monthly_price: string | null;
+  cable_price: string | null;
+  internet_price: string | null;
+  status: string;
+}
+
+export interface ConnectionStatusResult {
+  connection: Connection;
+  previous_status: string;
+  reconnection_invoice: Invoice | null;
+}

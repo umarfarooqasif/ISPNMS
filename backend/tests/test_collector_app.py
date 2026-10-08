@@ -348,3 +348,48 @@ def test_summary_only_counts_the_callers_own_payments(client, admin, make_user, 
     assert client.get(f"{API}/collector/summary", headers=ch1).json()["total"] == "100.00"
     assert client.get(f"{API}/collector/summary", headers=ch2).json()["total"] == "700.00"
     assert client.get(f"{API}/collector/summary", headers=admin).status_code == 403
+
+
+# ------------------------------------------------------------------ collector management (web stage 3)
+def test_collector_list_shows_the_person_not_just_an_id(client, admin, make_user, mk_customer):
+    col, _ = mk_collector(make_user, client, admin, [mk_customer()], code="C07")
+    rows = client.get(f"{API}/collectors", headers=admin).json()
+    me = next(r for r in rows if r["id"] == col["id"])
+    assert me["code"] == "C07" and me["username"] and me["full_name"]
+
+
+def test_current_assignments_can_be_read_back(client, admin, make_user, mk_customer):
+    area = client.post(f"{API}/areas", headers=admin, json={"name": "Qadir Colony"}).json()
+    a, b = mk_customer("Zed Last"), mk_customer("Amir First")
+    uid, _ = make_user("collector")
+    col = client.post(f"{API}/collectors", headers=admin, json={"user_id": str(uid), "code": "C05"}).json()
+    client.put(f"{API}/collectors/{col['id']}/areas", headers=admin, json={"area_ids": [area["id"]]})
+    client.put(f"{API}/collectors/{col['id']}/customers", headers=admin, json={
+        "customers": [{"customer_id": a["id"], "sort_order": 2}, {"customer_id": b["id"], "sort_order": 1}]})
+
+    out = client.get(f"{API}/collectors/{col['id']}/assignments", headers=admin).json()
+    assert out["area_ids"] == [area["id"]]
+    assert [c["customer_id"] for c in out["customers"]] == [b["id"], a["id"]]     # by sort order
+    assert out["customers"][0]["full_name"] == "Amir First" and out["customers"][0]["customer_code"]
+    assert client.get(f"{API}/collectors/{uuid.uuid4()}/assignments", headers=admin).status_code == 404
+
+
+def test_a_collector_can_be_deactivated_and_reactivated(client, admin, make_user, mk_customer):
+    c = mk_customer()
+    col, ch = mk_collector(make_user, client, admin, [c])
+    assert client.get(f"{API}/collector/snapshot", headers=ch).status_code == 200
+    r = client.patch(f"{API}/collectors/{col['id']}", headers=admin, json={"status": "INACTIVE"})
+    assert r.status_code == 200 and r.json()["status"] == "INACTIVE"
+    assert client.get(f"{API}/collector/snapshot", headers=ch).status_code == 403     # the phone is locked out
+    assert client.patch(f"{API}/collectors/{col['id']}", headers=admin, json={"status": "ACTIVE"}).status_code == 200
+    assert client.get(f"{API}/collector/snapshot", headers=ch).status_code == 200
+    assert client.patch(f"{API}/collectors/{col['id']}", headers=admin, json={"status": "BANNED"}).status_code == 422
+    assert client.patch(f"{API}/collectors/{uuid.uuid4()}", headers=admin, json={"status": "ACTIVE"}).status_code == 404
+
+
+def test_only_collector_managers_can_see_or_change_collectors(client, admin, make_user, mk_customer):
+    col, ch = mk_collector(make_user, client, admin, [mk_customer()])
+    for h in (ch, make_user("technician")[1]):
+        assert client.get(f"{API}/collectors", headers=h).status_code == 403
+        assert client.get(f"{API}/collectors/{col['id']}/assignments", headers=h).status_code == 403
+        assert client.patch(f"{API}/collectors/{col['id']}", headers=h, json={"status": "INACTIVE"}).status_code == 403

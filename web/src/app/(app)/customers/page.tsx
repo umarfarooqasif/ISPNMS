@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { useCan } from "@/components/Shell";
 import { Card, ErrorBox, Loading, PageHeader, StatusBadge } from "@/components/ui";
 import { qs } from "@/lib/api";
 import { useDebounced, useFetch } from "@/lib/hooks";
@@ -17,6 +18,7 @@ const STATUSES = [
 ];
 
 export default function CustomersPage() {
+  const can = useCan();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("ACTIVE");
   const dq = useDebounced(q, 300).trim();
@@ -35,7 +37,8 @@ export default function CustomersPage() {
 
   return (
     <>
-      <PageHeader title="Customers" subtitle="Search by name, customer ID, mobile, house number or Internet ID." />
+      <PageHeader title="Customers" subtitle="Search by name, customer ID, mobile, house number or Internet ID."
+        actions={can("customer.create") ? <Link className="btn" href="/customers/new">New customer</Link> : undefined} />
       <Card>
         <div className="toolbar">
           <input type="search" placeholder="Search customers…" value={q} aria-label="Search customers"

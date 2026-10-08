@@ -16,6 +16,9 @@ export const NAV: NavItem[] = [
   { href: "/billing/late-fees", label: "Late fees", permission: "billing.run" },
   { href: "/billing/opening-balances", label: "Opening balances", permission: "billing.opening_balance" },
   { href: "/import", label: "Import customers", permission: "import.upload" },
+  { href: "/collectors", label: "Collectors", permission: "collector.manage" },
+  { href: "/users", label: "Users", permission: "user.manage" },
+  { href: "/audit", label: "Audit log", permission: "audit.view" },
 ];
 
 /** Exact match, or a page below it. (So /billing/run does not light up for /billing/runs.) */

@@ -1,8 +1,9 @@
-# Phase 6: admin web dashboard (stages 1 and 2)
+# Phase 6: admin web dashboard (stages 1 to 3)
 
 A browser interface for the office, served by the `web` container (Next.js) behind Caddy at the same
 address as the API. Stage 1: login, dashboard, customers, Wasooli import. Stage 2 (below): billing,
-payments and receipts. Stage 3 (next): collectors, users, connection status and the audit log.
+payments and receipts. Stage 3 (below): customers (create, edit, archive), connections and their status, users, collectors and the
+audit log.
 
 ## What you can do now
 
@@ -42,6 +43,25 @@ Safeguards on every action that changes money: it needs a preview of the exact c
 an explicit tick and a confirmation; the server independently refuses a real run without
 `"confirm": true`; double clicks are blocked while a request is running.
 
+## Stage 3: customers, people and the record
+
+* **Customers:** *New customer* (only the name is required), *Edit details* (saving sends only what you
+  changed, so editing never erases the stored CNIC, which is never shown in the form), *Archive*.
+* **Connections:** *Add connection* (internet, cable or both, package and/or price, next due date; the
+  screen warns that a connection with no due date is not billed). *Change status* on each connection:
+  suspend, disconnect, reactivate, free or trial, always with a reason; reactivating can add a
+  reconnection fee and set the date billing resumes. Suspended or disconnected connections are never billed.
+* **Users:** add people, set roles, disable accounts, reset passwords. Only a super admin can grant the
+  super-admin role, and you cannot disable your own account.
+* **Collectors:** add a collector (a user with the Collector role plus a code such as C01), deactivate or
+  reactivate them (a deactivated collector's phone is locked out at its next sync), and choose which
+  **areas** and **individual customers** they see, with a visiting order.
+* **Audit log:** who did what and when, filterable by action and person, with details. Passwords, tokens
+  and CNIC numbers are never displayed.
+
+Backend additions for this stage: the collector list now carries names; `GET /collectors/{id}/assignments`
+reads current assignments; `PATCH /collectors/{id}` activates or deactivates.
+
 ## How login is kept safe
 
 The browser never holds an API token. Login sets two cookies the page's JavaScript cannot read
@@ -68,8 +88,8 @@ After updating, check: `docker compose ps` (web should be *healthy*) then open y
 
 * On the review screen, rows you decided during this visit are marked; after a refresh they show as
   undecided even though the decision is saved on the server (the API does not return it per row).
-* No screens yet for collectors, users, connection status (suspend, reconnect), creating or editing
-  customers, or the audit log. Those API features exist and get screens in stage 3.
+* Not yet in the web app: packages and areas management (use the API for now), the customer's
+  full ledger and invoice history, reports and exports, and printing receipts.
 * The bill-run preview lists the first 200 customers on screen; the complete list is saved with the
   run once you bill and can be browsed under Billing history.
 * Not yet checked in a real browser by the author: please report anything that looks or behaves wrongly.

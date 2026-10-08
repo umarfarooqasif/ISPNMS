@@ -411,6 +411,24 @@ class CollectorOut(ORM):
     user_id: uuid.UUID
     code: str
     status: str
+    username: str | None = None   # filled in from the linked user so screens can show a person
+    full_name: str | None = None
+
+
+class CollectorUpdate(BaseModel):
+    status: Literal["ACTIVE", "INACTIVE"]
+
+
+class AssignedCustomerOut(BaseModel):
+    customer_id: uuid.UUID
+    customer_code: str
+    full_name: str
+    sort_order: int
+
+
+class AssignmentsOut(BaseModel):
+    area_ids: list[uuid.UUID]
+    customers: list[AssignedCustomerOut]
 
 
 class AssignAreas(BaseModel):
