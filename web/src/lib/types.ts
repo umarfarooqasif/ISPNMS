@@ -158,6 +158,8 @@ export interface ImportRow {
   match_candidates: MatchCandidate[] | null;
   result_customer_id: string | null;
   result_connection_id: string | null;
+  decision: string | null; // the latest decision saved for this row
+  decision_customer_id: string | null;
 }
 
 export type Decision = "IMPORT" | "SKIP" | "UPDATE_EXISTING" | "CREATE_SEPARATE" | "MANUAL_EDIT";
@@ -318,4 +320,32 @@ export interface ConnectionStatusResult {
   connection: Connection;
   previous_status: string;
   reconnection_invoice: Invoice | null;
+}
+
+// ------------------------------------------------------------------ history (stage 4)
+
+export interface LedgerRow {
+  id: string;
+  entry_type: string;
+  amount: string;
+  description: string | null;
+  ref_type: string | null;
+  ref_id: string | null;
+  reference: string | null;
+  effective_date: string;
+  posted_at: string;
+  reverses_entry_id: string | null;
+  balance: string; // balance right after this entry (negative = credit)
+}
+
+export interface PackageFull extends PackageRow {
+  speed_mbps: number | null;
+  description: string | null;
+  aliases: string[];
+}
+
+export interface Company {
+  name: string;
+  phone: string;
+  address: string;
 }

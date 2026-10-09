@@ -73,6 +73,9 @@ services:
     restart: unless-stopped
     environment:
       API_URL: http://api:8000
+      COMPANY_NAME: ${COMPANY_NAME:-ISP Billing}
+      COMPANY_PHONE: ${COMPANY_PHONE:-}
+      COMPANY_ADDRESS: ${COMPANY_ADDRESS:-}
     depends_on:
       api:
         condition: service_healthy

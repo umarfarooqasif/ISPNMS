@@ -28,7 +28,7 @@ from app.services.opening_balances import OpeningRow, load_opening_balances
 
 router = APIRouter(tags=["billing-operations"])
 
-PREVIEW_ITEM_LIMIT = 500
+PREVIEW_ITEM_LIMIT = 3000   # a full bill run for a few thousand customers can be reviewed in full
 
 
 def _with_names(db: Session, items: list[RunItemOut]) -> list[RunItemOut]:

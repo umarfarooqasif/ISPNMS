@@ -22,6 +22,7 @@ export default function BillRunPage() {
   const [skipRemaining, setSkipRemaining] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [filter, setFilter] = useState("");
+  const [shownPage, setShownPage] = useState({ filter: "", page: 0 });
 
   const [preview, setPreview] = useState<{ result: RunResult; key: string } | null>(null);
   const [done, setDone] = useState<RunResult | null>(null);
@@ -61,6 +62,11 @@ export default function BillRunPage() {
   }
 
   const shown = preview ? itemsByOutcome(preview.result.items, filter) : [];
+  const SHOW = 50;
+  const pg = shownPage.filter === `${filter}|${preview?.key ?? ""}` ? shownPage.page : 0;
+  const pageKey = `${filter}|${preview?.key ?? ""}`;
+  const pageItems = shown.slice(pg * SHOW, pg * SHOW + SHOW);
+  const pages = Math.max(1, Math.ceil(shown.length / SHOW));
   const counts = preview?.result.counts ?? {};
   const outcomes = [...ATTENTION_OUTCOMES, "INVOICED", "FREE_SKIPPED"].filter((o) => (counts[o] ?? 0) > 0);
 
@@ -133,9 +139,14 @@ export default function BillRunPage() {
               </button>
             ))}
           </div>
-          <RunItemsTable items={shown.slice(0, 200)} />
-          {shown.length > 200 || preview.result.items_truncated ? (
-            <p className="small muted">Showing the first 200. The full list is saved with the run once you bill.</p>
+          <RunItemsTable items={pageItems} />
+          <div className="pager">
+            <button className="btn secondary small" disabled={pg === 0} onClick={() => setShownPage({ filter: pageKey, page: pg - 1 })}>← Previous</button>
+            <span className="muted small">Page {pg + 1} of {pages} · {shown.length.toLocaleString("en-US")} customer(s)</span>
+            <button className="btn secondary small" disabled={pg + 1 >= pages} onClick={() => setShownPage({ filter: pageKey, page: pg + 1 })}>Next →</button>
+          </div>
+          {preview.result.items_truncated ? (
+            <p className="small muted">This run touches more customers than can be listed here. The totals above are complete, and the full record is saved when you bill.</p>
           ) : null}
 
           {can("billing.run") ? (

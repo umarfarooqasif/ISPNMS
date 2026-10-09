@@ -3,7 +3,7 @@
 Self-hosted billing and collection platform for an ISP, running alongside the existing
 MikroTik and Zalpro systems (which it does **not** replace).
 
-**Current status: Phases 1-4 complete, web dashboard stages 1-3 (customers, import, payments, billing, users, collectors, audit) added.** Thermal
+**Current status: Phases 1-4 complete, web dashboard stages 1-4 (customers, import, payments, billing, users, collectors, audit, history, printing, packages, areas) added.** Thermal
 printing and the rest of the web dashboard are later phases. See [`docs/phase1.md`](docs/phase1.md), [`docs/phase2.md`](docs/phase2.md),
 [`docs/phase3.md`](docs/phase3.md) (**read its "first bill run" section before billing**) and
 [`docs/phase4.md`](docs/phase4.md) and [`docs/phase6.md`](docs/phase6.md) (web dashboard) for exactly what exists and [`docs/architecture.md`](docs/architecture.md) for the overall design.

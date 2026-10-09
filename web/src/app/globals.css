@@ -100,3 +100,28 @@ pre.raw { background: #f6f8fa; padding: .5rem; border-radius: 6px; overflow: aut
 .login-card label { display: block; font-size: .85rem; color: var(--muted); margin: .75rem 0 .2rem; }
 .login-card input { width: 100%; }
 .login-card .btn { width: 100%; justify-content: center; margin-top: 1.25rem; }
+
+/* ------------------------------------------------------------ printing */
+.print-root { background: #e9edf0; min-height: 100vh; padding: 1rem; }
+.print-bar { display: flex; gap: .6rem; align-items: center; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; }
+.print-sheet { background: #fff; margin: 0 auto; padding: 1rem; color: #000; box-shadow: 0 1px 6px rgba(0,0,0,.2); }
+.paper-80 .print-sheet { width: 80mm; font-size: 12px; line-height: 1.35; padding: 3mm; }
+.paper-a4 .print-sheet { width: 210mm; min-height: 297mm; padding: 14mm; font-size: 13px; }
+.print-head { text-align: center; margin-bottom: .6rem; border-bottom: 1px dashed #000; padding-bottom: .4rem; }
+.paper-a4 .print-head { text-align: left; border-bottom: 2px solid #000; }
+.print-company { font-weight: 700; font-size: 1.25em; }
+.print-title { text-align: center; font-weight: 700; letter-spacing: .06em; margin: .4rem 0; }
+.print-row { display: flex; justify-content: space-between; gap: .5rem; padding: .1rem 0; }
+.print-row span:first-child { color: #333; }
+.print-big { text-align: center; font-size: 1.8em; font-weight: 700; margin: .4rem 0; }
+.print-foot { text-align: center; margin-top: .8rem; border-top: 1px dashed #000; padding-top: .4rem; font-size: .9em; }
+.print-sheet table { width: 100%; border-collapse: collapse; }
+.print-sheet th, .print-sheet td { border-bottom: 1px solid #999; padding: .25rem .35rem; text-align: left; vertical-align: top; }
+.print-sheet th.r, .print-sheet td.r { text-align: right; }
+@media print {
+  body, .print-root { background: #fff !important; padding: 0 !important; }
+  .no-print { display: none !important; }
+  .print-sheet { box-shadow: none !important; margin: 0 !important; }
+  .paper-a4 .print-sheet { width: auto; min-height: 0; padding: 0; }
+  .paper-80 .print-sheet { width: auto; padding: 0; }
+}

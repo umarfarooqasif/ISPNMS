@@ -48,6 +48,8 @@ class RowOut(BaseModel):
     match_candidates: list | None
     result_customer_id: uuid.UUID | None
     result_connection_id: uuid.UUID | None
+    decision: str | None = None                  # the latest decision made for this row, if any
+    decision_customer_id: uuid.UUID | None = None  # for UPDATE_EXISTING: which customer it was attached to
 
 
 class DecisionIn(BaseModel):
@@ -124,6 +126,27 @@ def get_import(session_id: uuid.UUID, db: Session = Depends(get_db),
     return _load(db, session_id)
 
 
+def _with_decisions(db: Session, rows: list[ImportRow]) -> list[RowOut]:
+    """Rows plus the latest decision recorded for each, so the review screen survives a refresh."""
+    out = [RowOut.model_validate(r) for r in rows]
+    if not out:
+        return out
+    latest: dict[uuid.UUID, ImportRowDecision] = {}
+    for d in db.scalars(select(ImportRowDecision).where(ImportRowDecision.row_id.in_([r.id for r in rows]))
+                        .order_by(ImportRowDecision.decided_at, ImportRowDecision.id)):
+        latest[d.row_id] = d   # later decisions overwrite earlier ones
+    for item in out:
+        d = latest.get(item.id)
+        if d is not None:
+            item.decision = d.decision
+            cid = (d.edited_values or {}).get("customer_id")
+            try:
+                item.decision_customer_id = uuid.UUID(str(cid)) if cid else None
+            except ValueError:
+                item.decision_customer_id = None
+    return out
+
+
 @router.get("/{session_id}/rows", response_model=list[RowOut])
 def list_rows(
     session_id: uuid.UUID,
@@ -149,7 +172,7 @@ def list_rows(
             | func.lower(ImportRow.normalized["internet_id"].astext).like(like)
             | ImportRow.normalized["mobile"].astext.like(f"%{q}%")
         )
-    return list(db.scalars(query.order_by(ImportRow.row_index).limit(limit).offset(offset)))
+    return _with_decisions(db, list(db.scalars(query.order_by(ImportRow.row_index).limit(limit).offset(offset))))
 
 
 @router.get("/{session_id}/rows/{row_id}", response_model=RowOut)
@@ -158,7 +181,7 @@ def get_row(session_id: uuid.UUID, row_id: uuid.UUID, db: Session = Depends(get_
     row = db.get(ImportRow, row_id)
     if row is None or row.session_id != session_id:
         raise HTTPException(404, "Row not found")
-    return row
+    return _with_decisions(db, [row])[0]
 
 
 @router.post("/{session_id}/rows/{row_id}/decision", status_code=201)

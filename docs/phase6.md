@@ -1,4 +1,4 @@
-# Phase 6: admin web dashboard (stages 1 to 3)
+# Phase 6: admin web dashboard (stages 1 to 4)
 
 A browser interface for the office, served by the `web` container (Next.js) behind Caddy at the same
 address as the API. Stage 1: login, dashboard, customers, Wasooli import. Stage 2 (below): billing,
@@ -62,6 +62,23 @@ an explicit tick and a confirmation; the server independently refuses a real run
 Backend additions for this stage: the collector list now carries names; `GET /collectors/{id}/assignments`
 reads current assignments; `PATCH /collectors/{id}` activates or deactivates.
 
+## Stage 4: history, printing and set-up screens
+
+* **Full history** (customer page, *Full history*): every bill, payment, cancellation, adjustment and refund in
+  order, each with the balance right after it, plus a list of every bill with what was paid and owed.
+* **Printing** (browser print, no extra software): a **receipt** on an 80 mm thermal printer or A4, an **invoice**
+  and an **account statement** on A4. Each has *Print or save as PDF*. The business name, phone and address come
+  from `COMPANY_NAME`, `COMPANY_PHONE` and `COMPANY_ADDRESS` in `.env` (restart `web` after changing them).
+* **Packages:** add and edit plans, prices (internet, cable, combined), speed and status. A note explains that
+  imported customers keep the price from the file, so changing a package price does not change their bill.
+* **Areas:** add, rename (with Urdu name) and delete. An area still used by customers or collectors cannot be
+  deleted.
+* **Bill-run preview** now lists every customer, 50 per page (up to 3,000), not just the first 200.
+* **Import review** now remembers your decisions after a refresh, and you can change one later.
+
+Backend additions: `GET /customers/{id}/ledger`, `GET /customers/{id}/invoices`, `PATCH`/`DELETE /areas/{id}`,
+and each import row now reports its latest `decision`.
+
 ## How login is kept safe
 
 The browser never holds an API token. Login sets two cookies the page's JavaScript cannot read
@@ -86,12 +103,10 @@ After updating, check: `docker compose ps` (web should be *healthy*) then open y
 
 ## Known limits (stage 1)
 
-* On the review screen, rows you decided during this visit are marked; after a refresh they show as
-  undecided even though the decision is saved on the server (the API does not return it per row).
-* Not yet in the web app: packages and areas management (use the API for now), the customer's
-  full ledger and invoice history, reports and exports, and printing receipts.
-* The bill-run preview lists the first 200 customers on screen; the complete list is saved with the
-  run once you bill and can be browsed under Billing history.
+* Not yet in the web app: reports, CSV/Excel export and charts (stage 5); adjustments, discounts and refunds,
+  package changes, a settings page, bulk actions and backup controls (stage 6).
+* Printing uses the browser's print dialog. Printing straight from the collector's phone to a Bluetooth printer
+  is the separate Phase 5.
 * Not yet checked in a real browser by the author: please report anything that looks or behaves wrongly.
 
 ## Developing

@@ -16,6 +16,8 @@ export const NAV: NavItem[] = [
   { href: "/billing/late-fees", label: "Late fees", permission: "billing.run" },
   { href: "/billing/opening-balances", label: "Opening balances", permission: "billing.opening_balance" },
   { href: "/import", label: "Import customers", permission: "import.upload" },
+  { href: "/packages", label: "Packages", permission: "package.view" },
+  { href: "/areas", label: "Areas", permission: "area.view" },
   { href: "/collectors", label: "Collectors", permission: "collector.manage" },
   { href: "/users", label: "Users", permission: "user.manage" },
   { href: "/audit", label: "Audit log", permission: "audit.view" },

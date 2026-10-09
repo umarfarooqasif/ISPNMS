@@ -18,7 +18,7 @@ describe("menu", () => {
 
   it("never lights two items for the same page", () => {
     for (const path of ["/", "/customers", "/customers/1", "/payments", "/payments/9", "/billing/run", "/billing/runs",
-      "/billing/runs/7", "/billing/outstanding", "/billing/late-fees", "/billing/opening-balances", "/import", "/import/3", "/collectors", "/collectors/9", "/users", "/audit", "/customers/new"]) {
+      "/billing/runs/7", "/billing/outstanding", "/billing/late-fees", "/billing/opening-balances", "/import", "/import/3", "/collectors", "/collectors/9", "/users", "/audit", "/customers/new", "/customers/5/history", "/packages", "/areas"]) {
       const lit = NAV.filter((n) => isActive(path, n.href));
       assert.equal(lit.length, 1, `${path} lit ${lit.map((n) => n.href).join(", ")}`);
     }

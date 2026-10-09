@@ -52,6 +52,7 @@ export default function PaymentPage() {
       />
       {voided ? <Notice kind="warn">This payment was cancelled{p.void_reason ? `: ${p.void_reason}` : ""}. It no longer counts.</Notice> : null}
 
+      <p><Link className="btn secondary" href={`/print/receipt/${p.id}`}>Print receipt</Link></p>
       <Card>
         <dl className="kv">
           <dt>Amount</dt><dd><strong>{money(p.amount)}</strong></dd>

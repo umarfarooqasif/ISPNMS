@@ -383,6 +383,26 @@ class LedgerEntryOut(ORM):
     reverses_entry_id: uuid.UUID | None
 
 
+class LedgerRowOut(BaseModel):
+    id: uuid.UUID
+    entry_type: str
+    amount: Decimal
+    description: str | None = None
+    ref_type: str | None = None
+    ref_id: uuid.UUID | None = None
+    reference: str | None = None       # the invoice or receipt number, when there is one
+    effective_date: date
+    posted_at: datetime
+    reverses_entry_id: uuid.UUID | None = None
+    balance: Decimal                   # what the customer owed right after this entry (negative = credit)
+
+
+class AreaUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    name_ur: str | None = None
+    code: str | None = None
+
+
 class StatementOut(BaseModel):
     customer_id: uuid.UUID
     billing_status: str | None = None  # PAID/DUE/PARTIAL/OVERDUE/SUSPENDED/DISCONNECTED/FREE

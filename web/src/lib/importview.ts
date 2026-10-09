@@ -95,6 +95,20 @@ export function defaultRowStatus(rowsByStatus: Record<string, number>): string {
   return "NEW";
 }
 
+const DECISION_TEXT: Record<string, string> = {
+  IMPORT: "will import",
+  CREATE_SEPARATE: "will import as new",
+  SKIP: "will skip",
+  UPDATE_EXISTING: "will attach to existing customer",
+  MANUAL_EDIT: "will import with your edits",
+};
+
+/** What a saved decision means, in plain words. null when nothing was decided. */
+export function decisionLabel(decision: string | null | undefined): string | null {
+  if (!decision) return null;
+  return DECISION_TEXT[decision] ?? decision;
+}
+
 export function rowName(row: ImportRow): string {
   const n = row.normalized?.["full_name"];
   if (typeof n === "string" && n) return n;

@@ -54,6 +54,7 @@ export default function CustomerPage() {
           {st?.billing_status ? <StatusBadge status={st.billing_status} /> : null}</>}
         actions={
           <div className="actions">
+            <Link className="btn secondary" href={`/customers/${c.id}/history`}>Full history</Link>
             {can("customer.update") && c.status !== "ARCHIVED" ? <button className="btn secondary" onClick={() => setEditing(!editing)}>Edit details</button> : null}
             {can("connection.create") && c.status !== "ARCHIVED" ? <button className="btn secondary" onClick={() => setAdding(!adding)}>Add connection</button> : null}
             {can("customer.archive") && c.status !== "ARCHIVED" ? <button className="btn secondary" onClick={() => void archive()}>Archive</button> : null}

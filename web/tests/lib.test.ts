@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { detailOf, qs } from "../src/lib/api";
 import { fmtBytes, fmtDate, isPositiveMoney, money, plural, sumMoney } from "../src/lib/format";
 import {
-  attachableCustomers, candidateText, canCommit, commitWarnings, defaultRowStatus, isBusy,
+  attachableCustomers, candidateText, canCommit, commitWarnings, decisionLabel, defaultRowStatus, isBusy,
   issueLabel, rowName, summaryView,
 } from "../src/lib/importview";
 import type { ImportRow } from "../src/lib/types";
@@ -85,7 +85,7 @@ describe("api helpers", () => {
 const row = (over: Partial<ImportRow> = {}): ImportRow => ({
   id: "r1", page: 1, row_index: 1, status: "NEW", raw_cells: { Name: "Raw Name", ID: "9001" },
   normalized: { full_name: "Ali Khan", mobile: "03001234567" }, issues: [], match_candidates: [],
-  result_customer_id: null, result_connection_id: null, ...over,
+  result_customer_id: null, result_connection_id: null, decision: null, decision_customer_id: null, ...over,
 });
 
 describe("import screen logic", () => {
@@ -150,6 +150,14 @@ describe("import screen logic", () => {
     assert.match(candidateText(list[0]), /CU-000007/);
     assert.match(candidateText(r.match_candidates![1]), /Another row in this file/);
     assert.deepEqual(attachableCustomers(row({ match_candidates: null })), []);
+  });
+
+  it("words a saved decision, and says nothing when there is none", () => {
+    assert.equal(decisionLabel(null), null);
+    assert.equal(decisionLabel(undefined), null);
+    assert.equal(decisionLabel("SKIP"), "will skip");
+    assert.equal(decisionLabel("UPDATE_EXISTING"), "will attach to existing customer");
+    assert.equal(decisionLabel("SOMETHING_NEW"), "SOMETHING_NEW");
   });
 
   it("lists what the preview will create so the person can confirm", () => {

@@ -11,7 +11,7 @@ import { fmtBytes, fmtDateTime, money, plural } from "@/lib/format";
 import { useDebounced, useFetch } from "@/lib/hooks";
 import {
   ACTION_LABEL, STATUS_LABEL, SESSION_LABEL, attachableCustomers, candidateText, canCommit,
-  commitWarnings, defaultRowStatus, isBusy, issueLabel, rowField, rowName, summaryView,
+  commitWarnings, decisionLabel, defaultRowStatus, isBusy, issueLabel, rowField, rowName, summaryView,
 } from "@/lib/importview";
 import type { CommitResult, Decision, ImportRow, ImportSession } from "@/lib/types";
 
@@ -204,7 +204,7 @@ export default function ImportSessionPage() {
               <p className="small muted">
                 These rows look like someone who is already in the system or elsewhere in this file. Decide for each:
                 import as a new customer, attach to the existing one, or skip. Rows you do not decide are left out.
-                Decisions are saved on the server; this page marks only the ones you make during this visit.
+                Your decisions are saved as you go, and you can change one at any time.
               </p>
             ) : null}
 
@@ -221,6 +221,7 @@ export default function ImportSessionPage() {
                     {shown.map((r) => {
                       const issues = r.issues ?? [];
                       const attach = attachableCustomers(r);
+                      const label = decided[r.id] ?? decisionLabel(r.decision);
                       return (
                         <tr key={r.id}>
                           <td className="muted">{r.row_index}</td>
@@ -247,8 +248,8 @@ export default function ImportSessionPage() {
                           </td>
                           {can("import.review") ? (
                             <td>
-                              {decided[r.id] ? <Badge tone="blue">{decided[r.id]}</Badge> : null}
-                              {!decided[r.id] && (r.status === "REVIEW" || r.status === "NEW") ? (
+                              {label ? <div><Badge tone="blue">{label}</Badge></div> : null}
+                              {(r.status === "REVIEW" || r.status === "NEW") ? (
                                 <div className="actions">
                                   <button className="btn small" disabled={working}
                                     onClick={() => void decide(r, r.status === "REVIEW" ? "CREATE_SEPARATE" : "IMPORT", "will import")}>
