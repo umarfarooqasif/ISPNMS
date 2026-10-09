@@ -81,6 +81,8 @@ def delete_area(area_id: uuid.UUID, request: Request, db: Session = Depends(get_
               before={"name": area.name}, request=request)
     db.commit()
 
+
+@router.post("/streets", response_model=StreetOut, status_code=201)
 def create_street(body: StreetIn, request: Request, db: Session = Depends(get_db),
                   user: User = Depends(require("area.manage"))):
     if db.get(Area, body.area_id) is None:
