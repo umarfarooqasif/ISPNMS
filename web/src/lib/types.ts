@@ -349,3 +349,29 @@ export interface Company {
   phone: string;
   address: string;
 }
+
+// ------------------------------------------------------------------ reports and dashboard (stage 5)
+
+export interface DayTotal { day: string; total: string; count: number }
+export interface MethodTotal { method: string; total: string; count: number }
+export interface CollectorTotal { collector_id: string | null; code: string; name: string; total: string; count: number }
+export interface MonthTotal { month: string; billed: string; collected: string }
+export interface AreaTotal { area: string; customers: number; total: string }
+
+export interface Dashboard {
+  as_of: string;
+  today_collected: string;
+  today_payments: number;
+  month_label: string;
+  month_billed: string;
+  month_collected: string;
+  month_payments: number;
+  collection_rate: string | null;
+  outstanding_total: string;
+  outstanding_customers: number;
+  connections_by_status: Record<string, number>;
+  daily: DayTotal[];
+  monthly: MonthTotal[];
+  collectors_this_month: CollectorTotal[];
+  outstanding_by_area: AreaTotal[];
+}

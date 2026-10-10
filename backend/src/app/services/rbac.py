@@ -11,6 +11,8 @@ PERMISSIONS: dict[str, str] = {
     "role.manage": "Manage roles and grant the super_admin role",
     "settings.manage": "Change system settings",
     "audit.view": "View audit logs",
+    "report.view": "View the dashboard and reports",
+    "report.export": "Download reports as CSV files (they contain customer data)",
     "area.view": "View areas and streets",
     "area.manage": "Create/update areas and streets",
     "package.view": "View packages",
@@ -55,7 +57,7 @@ ROLES: dict[str, tuple[str, list[str]]] = {
         "Manager",
         [
             "audit.view", "area.view", "package.view", "customer.view", "connection.view",
-            "invoice.view", "payment.view", "receipt.view", "receipt.print",
+            "invoice.view", "payment.view", "receipt.view", "receipt.print", "report.view",
         ],
     ),
     "accountant": (
@@ -64,7 +66,7 @@ ROLES: dict[str, tuple[str, list[str]]] = {
             "area.view", "package.view", "customer.view", "connection.view", "invoice.view",
             "invoice.create", "payment.view", "payment.create", "payment.void", "billing.adjust",
             "billing.refund", "billing.run", "billing.opening_balance", "receipt.view",
-            "receipt.print", "audit.view",
+            "receipt.print", "audit.view", "report.view", "report.export",
         ],
     ),
     "collector": (

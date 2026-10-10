@@ -1,4 +1,4 @@
-# Phase 6: admin web dashboard (stages 1 to 4)
+# Phase 6: admin web dashboard (stages 1 to 5)
 
 A browser interface for the office, served by the `web` container (Next.js) behind Caddy at the same
 address as the API. Stage 1: login, dashboard, customers, Wasooli import. Stage 2 (below): billing,
@@ -79,6 +79,28 @@ reads current assignments; `PATCH /collectors/{id}` activates or deactivates.
 Backend additions: `GET /customers/{id}/ledger`, `GET /customers/{id}/invoices`, `PATCH`/`DELETE /areas/{id}`,
 and each import row now reports its latest `decision`.
 
+## Stage 5: dashboard numbers, reports and exports
+
+* **Dashboard:** collected today, billed and collected this month (with the collection rate), what customers
+  owe, active and disconnected connections; a chart of collections for the last 30 days; a billed-versus-collected
+  chart for the last 12 months; collections per collector this month; and the areas that owe the most.
+  Balances carried over from the old system are not counted as "billed". Shown to roles with `report.view`
+  (admin, accountant, manager).
+* **Reports:** pick a period (today, last 7 or 30 days, this month, last month, this year, or any dates up to
+  366 days) to see total collected, a daily chart, and totals by payment method and by collector. Cancelled
+  payments are never counted. Days are the business's local days, so a payment at 11:30 pm counts for that day.
+* **Downloads (CSV, opens in Excel):** payments, bills, who owes money, and the customer list. Files start with a
+  byte-order mark so Urdu shows correctly in Excel. Text that could run as an Excel formula (starting with
+  `=`, `+`, `-` or `@`) is neutralised. The CNIC is never exported. Needs `report.export` (admin and accountant),
+  and every download is recorded in the audit log. A request for more than 200,000 rows is refused with a
+  message, never silently cut short.
+
+These are CSV files, not .xlsx: Excel and Google Sheets open them directly.
+
+Backend additions: `GET /reports/dashboard`, `/reports/collections/{daily,by-method,by-collector}`,
+`/reports/monthly`, and `/reports/export/{payments,invoices,outstanding,customers}.csv`; new permissions
+`report.view` and `report.export` (existing roles receive them when the server next starts).
+
 ## How login is kept safe
 
 The browser never holds an API token. Login sets two cookies the page's JavaScript cannot read
@@ -103,8 +125,8 @@ After updating, check: `docker compose ps` (web should be *healthy*) then open y
 
 ## Known limits (stage 1)
 
-* Not yet in the web app: reports, CSV/Excel export and charts (stage 5); adjustments, discounts and refunds,
-  package changes, a settings page, bulk actions and backup controls (stage 6).
+* Not yet in the web app: adjustments, discounts and refunds, package changes, a settings page, bulk actions
+  and backup controls (stage 6).
 * Printing uses the browser's print dialog. Printing straight from the collector's phone to a Bluetooth printer
   is the separate Phase 5.
 * Not yet checked in a real browser by the author: please report anything that looks or behaves wrongly.

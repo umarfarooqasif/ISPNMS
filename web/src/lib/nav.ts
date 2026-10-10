@@ -10,6 +10,7 @@ export const NAV: NavItem[] = [
   { href: "/", label: "Dashboard" },
   { href: "/customers", label: "Customers", permission: "customer.view" },
   { href: "/payments", label: "Payments", permission: "payment.view" },
+  { href: "/reports", label: "Reports", permission: "report.view" },
   { href: "/billing/outstanding", label: "Who owes money", permission: "invoice.view" },
   { href: "/billing/run", label: "Bill run", permission: "billing.run" },
   { href: "/billing/runs", label: "Billing history", permission: "invoice.view" },
