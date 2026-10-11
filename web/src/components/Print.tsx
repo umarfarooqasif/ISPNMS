@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { DEFAULT_COMPANY, mergeCompany } from "@/lib/company";
 import type { Company } from "@/lib/types";
 
 export function useCompany(): Company {
-  const [c, setC] = useState<Company>({ name: "ISP Billing", phone: "", address: "" });
+  const [c, setC] = useState<Company>(DEFAULT_COMPANY);
   useEffect(() => {
-    fetch("/company", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j: Company | null) => { if (j) setC(j); })
-      .catch(() => { /* keep the default heading */ });
+    const load = (url: string) =>
+      fetch(url, { cache: "no-store" }).then((r) => (r.ok ? (r.json() as Promise<Company>) : null)).catch(() => null);
+    // saved Settings first, the server's configuration file as the fallback
+    Promise.all([load("/bff/settings/company"), load("/company")]).then(([saved, fromFile]) => setC(mergeCompany(saved, fromFile)));
   }, []);
   return c;
 }

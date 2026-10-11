@@ -13,6 +13,7 @@ PERMISSIONS: dict[str, str] = {
     "audit.view": "View audit logs",
     "report.view": "View the dashboard and reports",
     "report.export": "Download reports as CSV files (they contain customer data)",
+    "settings.manage": "Change business settings (late fees, billing timing, business details)",
     "area.view": "View areas and streets",
     "area.manage": "Create/update areas and streets",
     "package.view": "View packages",

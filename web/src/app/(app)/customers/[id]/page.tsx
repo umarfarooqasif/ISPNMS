@@ -5,9 +5,12 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import { AddConnection } from "@/components/AddConnection";
+import { AdjustBalance } from "@/components/AdjustBalance";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
+import { ChangePackage } from "@/components/ChangePackage";
 import { EditCustomer } from "@/components/EditCustomer";
 import { RecordPayment } from "@/components/RecordPayment";
+import { RefundCredit } from "@/components/RefundCredit";
 import { useCan } from "@/components/Shell";
 import { Card, ErrorBox, Loading, Notice, PageHeader, Stat, StatusBadge } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
@@ -79,6 +82,15 @@ export default function CustomerPage() {
           onDone={() => { statement.reload(); payments.reload(); }} />
       ) : null}
 
+      {st && can("billing.adjust") && c.status !== "ARCHIVED" ? (
+        <AdjustBalance customerId={c.id} customerName={c.full_name} balance={st.balance}
+          onDone={() => { statement.reload(); }} />
+      ) : null}
+      {st && can("billing.refund") && isPositiveMoney(st.credit) ? (
+        <RefundCredit customerId={c.id} customerName={c.full_name} credit={st.credit}
+          onDone={() => { statement.reload(); }} />
+      ) : null}
+
       <div className="grid">
         <Card title="Details">
           <dl className="kv">
@@ -103,7 +115,7 @@ export default function CustomerPage() {
           <div className="table-wrap">
             <table className="table">
               <thead>
-                <tr><th>Code</th><th>Internet ID</th><th>Type</th><th>Status</th><th>Monthly</th><th>Next due</th>{can("connection.status") ? <th></th> : null}</tr>
+                <tr><th>Code</th><th>Internet ID</th><th>Type</th><th>Status</th><th>Monthly</th><th>Next due</th>{can("connection.status") ? <th></th> : null}{can("connection.update") ? <th></th> : null}</tr>
               </thead>
               <tbody>
                 {connections.data.map((k) => {
@@ -121,6 +133,9 @@ export default function CustomerPage() {
                       {can("connection.status") ? (
                         <td><ConnectionStatus connection={k} onChanged={() => { connections.reload(); statement.reload(); }} /></td>
                       ) : null}
+                      {can("connection.update") && k.status !== "DISCONNECTED" ? (
+                        <td><ChangePackage connection={k} onChanged={() => { connections.reload(); }} /></td>
+                      ) : can("connection.update") ? <td></td> : null}
                     </tr>
                   );
                 })}
@@ -158,6 +173,9 @@ export default function CustomerPage() {
 
       <Card title="Unpaid bills">
         {statement.error ? <ErrorBox message={statement.error} onRetry={statement.reload} /> : null}
+        {st && st.open_invoices.length > 0 && !isPositiveMoney(st.balance) ? (
+          <Notice kind="info">This account owes nothing: a credit or adjustment covers the bills below, so no late fee will be added.</Notice>
+        ) : null}
         {statement.loading && !statement.data ? <Loading /> : null}
         {st && st.open_invoices.length === 0 ? <p className="muted">No unpaid bills.</p> : null}
         {st && st.open_invoices.length > 0 ? (

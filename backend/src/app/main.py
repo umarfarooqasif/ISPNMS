@@ -4,7 +4,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api import (
-    admin, auth, billing, billing_runs, collector_app, collectors, customers, history, imports, masters, reports,
+    admin, auth, billing, billing_runs, collector_app, collectors, connection_plans, customers, history, imports,
+    masters, reports, settings,
 )
 from app.core.config import get_settings
 from app.core.db import get_db
@@ -20,7 +21,8 @@ app = FastAPI(
 )
 
 API = "/api/v1"
-for module in (auth, admin, masters, collectors, customers, billing, billing_runs, collector_app, history, imports, reports):
+for module in (auth, admin, masters, collectors, customers, billing, billing_runs, collector_app, history, imports, reports,
+               connection_plans, settings):
     app.include_router(module.router, prefix=API)
 
 

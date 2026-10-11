@@ -375,3 +375,12 @@ export interface Dashboard {
   collectors_this_month: CollectorTotal[];
   outstanding_by_area: AreaTotal[];
 }
+
+// ------------------------------------------------------------------ settings, adjustments, plans (stage 6a)
+
+export interface SettingsState {
+  values: Record<string, string | number>;
+  defaults: Record<string, string | number>;
+  overridden: string[];
+  labels: Record<string, string>;
+}

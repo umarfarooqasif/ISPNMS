@@ -1,4 +1,4 @@
-# Phase 6: admin web dashboard (stages 1 to 5)
+# Phase 6: admin web dashboard (stages 1 to 6a)
 
 A browser interface for the office, served by the `web` container (Next.js) behind Caddy at the same
 address as the API. Stage 1: login, dashboard, customers, Wasooli import. Stage 2 (below): billing,
@@ -101,6 +101,34 @@ Backend additions: `GET /reports/dashboard`, `/reports/collections/{daily,by-met
 `/reports/monthly`, and `/reports/export/{payments,invoices,outstanding,customers}.csv`; new permissions
 `report.view` and `report.export` (existing roles receive them when the server next starts).
 
+## Stage 6a: settings, adjustments, refunds and package changes
+
+* **Settings** (admin only): days ahead to bill, the late-fee amount, grace days and days to pay, what the
+  Wasooli recharge date means (used for customers imported from then on), and the business name, phone and
+  address printed on receipts. The values in the server's `.env` file are the *standard*; a value saved here
+  overrides it immediately, **Use the standard** removes the override, and every change is audited. Nothing is
+  saved if any value is invalid. The `.env` company details remain the fallback for receipts.
+* **Adjust the balance** (customer page): give a credit or discount, or add a charge, with a required
+  reason; you see the balance afterwards and confirm first. It appears in the account history with your name.
+* **Pay back credit** (customer page, only when the customer has credit): refund up to the credit they hold.
+* **Change package** (each connection): move internet or cable to another package or price, from the **next
+  bill**. Bills that already exist are never changed. A special monthly price on the connection overrides the
+  package, and the screen warns when that would make the change pointless.
+* **Late fees and credit:** a customer whose account is in credit is no longer charged a late fee, even if an
+  old bill is still listed as unpaid.
+
+How credits work, so nothing surprises you: payments settle bills, but a credit or adjustment lowers the
+*balance* without marking a specific bill paid. So after a credit, old bills stay in the list until they are
+paid, the balance is what counts, and the customer page says so. Settling a particular bill with a credit is
+not built yet.
+
+Not included yet: choosing a future date for a package change (it applies from the next bill), and bulk
+actions and backup controls (stage 6b).
+
+Backend additions: `GET`/`PUT /settings`, `GET /settings/company`, `POST /connections/{id}/package`,
+migration `0006` (table `app_settings`, runs automatically on update) and the permission `settings.manage`
+(admins receive it when the server next starts).
+
 ## How login is kept safe
 
 The browser never holds an API token. Login sets two cookies the page's JavaScript cannot read
@@ -125,8 +153,8 @@ After updating, check: `docker compose ps` (web should be *healthy*) then open y
 
 ## Known limits (stage 1)
 
-* Not yet in the web app: adjustments, discounts and refunds, package changes, a settings page, bulk actions
-  and backup controls (stage 6).
+* Not yet in the web app: bulk actions and backup controls (stage 6b), and settling a specific bill with a
+  credit.
 * Printing uses the browser's print dialog. Printing straight from the collector's phone to a Bluetooth printer
   is the separate Phase 5.
 * Not yet checked in a real browser by the author: please report anything that looks or behaves wrongly.

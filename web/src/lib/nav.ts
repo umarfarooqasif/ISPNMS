@@ -19,6 +19,7 @@ export const NAV: NavItem[] = [
   { href: "/import", label: "Import customers", permission: "import.upload" },
   { href: "/packages", label: "Packages", permission: "package.view" },
   { href: "/areas", label: "Areas", permission: "area.view" },
+  { href: "/settings", label: "Settings", permission: "settings.manage" },
   { href: "/collectors", label: "Collectors", permission: "collector.manage" },
   { href: "/users", label: "Users", permission: "user.manage" },
   { href: "/audit", label: "Audit log", permission: "audit.view" },

@@ -35,6 +35,7 @@ from app.models import (
     Street,
 )
 from app.services import audit, wasooli
+from app.services.app_settings import effective
 from app.services.billing import get_or_create_account
 from app.services.billing_rules import add_months
 from app.services.customers import next_code, normalize_alias, normalize_mobile
@@ -43,9 +44,10 @@ STALE_IMPORT_AFTER = timedelta(minutes=30)
 COMMIT_EVERY = 100
 
 
-def initial_due_date(recharge):
-    """Next due date implied by a Wasooli recharge date (see RECHARGE_DATE_MEANS)."""
-    if recharge is None or get_settings().recharge_date_means == "NEXT_DUE":
+def initial_due_date(recharge, means=None):
+    """Next due date implied by a Wasooli recharge date. `means` is NEXT_DUE or LAST_RECHARGE; when not
+    given, the server-file default (RECHARGE_DATE_MEANS) applies."""
+    if recharge is None or (means or get_settings().recharge_date_means) == "NEXT_DUE":
         return recharge
     return add_months(recharge, 1)
 
@@ -506,7 +508,7 @@ class _CommitContext:
             source_recharge_date=_d(v.get("recharge_date")),
             # The recharge date IS the next due date. Only set on creation: a later export must not
             # move the due date of a connection this system is already billing.
-            next_due_date=initial_due_date(_d(v.get("recharge_date"))),
+            next_due_date=initial_due_date(_d(v.get("recharge_date")), effective(self.db).recharge_date_means),
             billing_day=_d(v.get("recharge_date")).day if _d(v.get("recharge_date")) else None,
             status=v["status"],
             area_id=area.id if area else None,

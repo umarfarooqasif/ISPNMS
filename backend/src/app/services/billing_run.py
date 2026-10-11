@@ -19,7 +19,7 @@ from decimal import Decimal
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
+from app.services.app_settings import effective
 from app.models import (
     BillingAccount,
     BillingRun,
@@ -28,6 +28,7 @@ from app.models import (
     Customer,
     Invoice,
     LateFee,
+    LedgerEntry,
     OpeningBalance,
     Package,
     Payment,
@@ -174,7 +175,7 @@ def run_monthly_billing(
 ) -> RunResult:
     """Bills every due connection. dry_run=True (the default) previews without writing anything."""
     run_date = run_date or svc.local_today()
-    lead_days = get_settings().billing_lead_days if lead_days is None else lead_days
+    lead_days = effective(db).billing_lead_days if lead_days is None else lead_days
     horizon = run_date + timedelta(days=lead_days)
 
     run = None
@@ -293,7 +294,7 @@ def run_late_fees(
     Skipped on purpose: invoices that are themselves late fees, imported opening balances (old
     arrears are not penalised retroactively), and customers who are fully disconnected.
     """
-    s = get_settings()
+    s = effective(db)
     run_date = run_date or svc.local_today()
     amount = money(s.late_fee_amount if amount is None else amount)
     grace_days = s.late_fee_grace_days if grace_days is None else grace_days
@@ -328,6 +329,17 @@ def run_late_fees(
                 or cust in fully_disconnected or not late_fee_applies(inv.due_date, run_date, grace_days)):
             continue
         by_customer[cust].append(inv)
+
+    # A customer whose account is in credit (for example after a goodwill credit) owes nothing, so a
+    # late fee would be wrong even though an old bill may still be listed as unpaid.
+    if by_customer:
+        balances = dict(db.execute(
+            select(BillingAccount.customer_id, func.sum(LedgerEntry.amount))
+            .join(LedgerEntry, LedgerEntry.billing_account_id == BillingAccount.id)
+            .where(BillingAccount.customer_id.in_(list(by_customer)))
+            .group_by(BillingAccount.customer_id)).all())
+        for cust in [c for c in by_customer if Decimal(balances.get(c) or 0) <= ZERO]:
+            del by_customer[cust]
 
     result = RunResult(dry_run=dry_run, run_id=run.id if run else None)
     for cust, invs in by_customer.items():
